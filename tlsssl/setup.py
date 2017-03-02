@@ -1,6 +1,7 @@
 from distutils.core import setup
 from distutils.extension import Extension
 from distutils.command.build_ext import build_ext
+import urllib2
 import os, stat, shutil, subprocess, re, sys
 
 # TODO: See if this can be done in a prettier fashion. Boy it's ugly.
@@ -8,6 +9,7 @@ CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 VENDIR = os.path.join(os.path.dirname(CURRENT_DIR), 'vendir')
 sys.path.append(VENDIR)
 import config
+import hash_helper
 CONFIG = config.ConfigSectionMap()
 
 # TODO: for when we make this into a package
@@ -90,27 +92,46 @@ class custom_ext(build_ext):
         return result
 
 
-def download_python():
-    """Download CPython from Github and checkout a specific git commit defined
-    in our config.ini"""
+def download_python_source_files():
+    """Download CPython source files from Github. Verify the sha hash and
+    redownload if they do not match."""
     src_dir = os.path.join(CURRENT_DIR, '_src')
     os.chdir(src_dir)
-    # Check to see if we have the cpython git repo downloaded already.
-    # FIXME: This could lead to a false positive if the directory isn't a
-    # valid git repo
-    cpython_dir = os.path.join(src_dir, 'cpython')
-    if not os.path.isdir(cpython_dir):
-        _ = subprocess.check_output(['git', 'clone',
-                                    'https://github.com/python/cpython.git'])
-        os.chdir(os.path.join(src_dir, 'cpython'))
-        _ = subprocess.check_output(['git', 'checkout', '-f', '--detach', CONFIG['cpython_2_7_git_sha']])
+    gh_url = (
+              'https://raw.githubusercontent.com/python/cpython/{}/'.format(
+               CONFIG['cpython_2_7_git_commit'])
+             )
+    # This ugly looking block of code is a pair that matches the filename,
+    # github url, and sha256 hash for each required python source file
+    fp = [
+          ['ssl.py', '{}Lib/ssl.py'.format(gh_url), CONFIG['ssl_py_hash']],
+          ['_ssl.c', '{}Modules/_ssl.c'.format(gh_url), CONFIG['ssl_c_hash']],
+          ['make_ssl_data.py', '{}Tools/ssl/make_ssl_data.py'.format(gh_url),
+           CONFIG['make_ssl_data_py_hash']],
+          ['socketmodule.h',   '{}Modules/socketmodule.h'.format(gh_url),
+           CONFIG['socketmodule_h_hash']],
+         ]
+    # Verify we have the correct python source files else download it
+    should_bail = False
+    for fname, url, sha256 in fp:
+        # print(fname, url, sha256)
+        if not os.path.isfile(fname) or (
+                hash_helper.getsha256hash(fname) != sha256):
+            print("Downloading '{}' source file...".format(fname))
+            try:
+                data = urllib2.urlopen(url)
+                f = open(fname, "w")
+                content = data.read()
+                f.write(content)
+                f.close()
+            except(urllib2.HTTPError, urllib2.URLError,
+                   OSError, IOError) as err:
+                should_bail = TRUE
+                sys.stderr.write("ERROR: Unable to download '{}' "
+                                 "due to {}\n".format(fname, err))
     os.chdir(CURRENT_DIR)
-    # Copy the four files that need patching out of the git repo
-    # FIXME: we shouldn't copy these four files on every run
-    shutil.copy(os.path.join(cpython_dir, 'Lib/ssl.py'), src_dir)
-    shutil.copy(os.path.join(cpython_dir, 'Modules/_ssl.c'), src_dir)
-    shutil.copy(os.path.join(cpython_dir, 'Tools/ssl/make_ssl_data.py'), src_dir)
-    shutil.copy(os.path.join(cpython_dir, 'Modules/socketmodule.h'), src_dir)
+    if should_bail:
+        sys.exit()
 
 
 def prep():
@@ -133,7 +154,7 @@ def prep():
         shutil.copy(source, os.path.realpath(os.path.join(os.path.dirname(__file__))))
 
 
-download_python()
+download_python_source_files()
 
 prep()
 
