@@ -169,7 +169,7 @@ def download_python_source_files():
 
 
 def prep():
-    """Prior to running setup, we should be making our patched files if they
+    """Prior to running setup, we should make our patched files if they
     don't exist"""
     patch_pairs = [
                    ['_tlsssl.c',           '_src/_ssl.c', ],
