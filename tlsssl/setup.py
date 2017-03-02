@@ -1,3 +1,8 @@
+"""
+Setup script to compile tlsssl to run againt python 2.7 or higher.
+Has a dependency on openssl package being installed on this local machine
+"""
+
 from distutils.core import setup
 from distutils.extension import Extension
 from distutils.command.build_ext import build_ext
