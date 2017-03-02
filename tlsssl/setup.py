@@ -2,7 +2,13 @@ from distutils.core import setup
 from distutils.extension import Extension
 from distutils.command.build_ext import build_ext
 import urllib2
-import os, stat, shutil, subprocess, re, sys
+import os
+import stat
+import shutil
+import subprocess
+import re
+import sys
+import inspect
 
 CURRENT_DIR = os.path.dirname(
     os.path.abspath(inspect.getfile(inspect.currentframe())))
