@@ -4,12 +4,14 @@ from distutils.command.build_ext import build_ext
 import urllib2
 import os, stat, shutil, subprocess, re, sys
 
-# TODO: See if this can be done in a prettier fashion. Boy it's ugly.
-CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-VENDIR = os.path.join(os.path.dirname(CURRENT_DIR), 'vendir')
-sys.path.append(VENDIR)
-import config
-import hash_helper
+CURRENT_DIR = os.path.dirname(
+    os.path.abspath(inspect.getfile(inspect.currentframe())))
+PARENT_DIR = os.path.dirname(CURRENT_DIR)
+sys.path.insert(0, PARENT_DIR)
+
+from vendir import config
+from vendir import hash_helper
+
 CONFIG = config.ConfigSectionMap()
 
 # TODO: for when we make this into a package
