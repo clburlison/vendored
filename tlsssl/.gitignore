@@ -1,0 +1,9 @@
+# Ignore
+*.h
+*.c
+*.py
+build
+
+# But not these files...
+!.gitignore
+!setup.py
