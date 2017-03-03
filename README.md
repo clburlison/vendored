@@ -7,22 +7,29 @@ The goal of this repo make it easy to "vendor" your own frameworks and programmi
 
 Once this project is complete you will be able to have own version of python, ruby, pyojbc bridge, openssl, and more all in one nice big package or multiple smaller packages for easy deployment.
 
+To keep track of progress look at the [Master list](https://github.com/clburlison/vendored/issues/1)
 
 ## Usage
 
-Currently parts of this project are working. You can run `./build.py` to build and optionally package some of these pieces.
+**Requires:**
+* Apple Command Line Tools (installable with `xcode-select --install`)
+* Python 2.7. Not compatible with Python3 at this time.
+
+Currently parts of this project are working. You can run `./build.py` to build and optionally package some of these pieces. Or `cd` into one of the subfolders and run `python setup.py` directly (the help is quite 'helpful'). This will give you the most control at this point until the build script matures and has more arguments added.
 
 ## Creating a patch
-Most of these tools require patch files for compiling. If you're unfamiliar with creating a patch file the basics look a little something like:
+Some of these tools require patch files for compiling. If you're unfamiliar with creating a patch file the basics look a little something like:
 
 ```bash
 diff -u hello.c hello_new.c > hello.c.patch
 ```
 
 ## Credits
-Much thanks to the [Google MacOps](https://github.com/google/macops/) team for open sourcing their solution and to [@pudquick](https://github.com/pudquick) for his work on tlsssl so we can patch the native Python 2.7 that comes on macOS.
+Many thanks to...
+* the [Google MacOps](https://github.com/google/macops/) team for open sourcing their solution.
+* [@pudquick](https://github.com/pudquick) for his work on tlsssl so we can patch the native Python 2.7 that comes on macOS.
 
-Based off of works by:
+This project uses works from:
 
 | Author/Organization  |  Project Link |
 |----------------------|---------------|
