@@ -7,7 +7,7 @@ import sys
 import subprocess
 import os
 
-from vendir import config  # noqa
+from vendir import config
 CONFIG = config.ConfigSectionMap()
 
 

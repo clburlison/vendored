@@ -1,6 +1,6 @@
 """
 Functions for hasing a file. This has been completely lifted from
-Munki.munkilib.munkicommon
+Munki3.munkilib.munkihash
 """
 
 import hashlib
@@ -32,18 +32,9 @@ def gethash(filename, hash_function):
     return hash_function.hexdigest()
 
 
-def getmd5hash(filename):
-    """
-    Returns hex of MD5 checksum of a file
-    """
-    hash_function = hashlib.md5()
-    return gethash(filename, hash_function)
-
-
 def getsha256hash(filename):
     """
     Returns the SHA-256 hash value of a file as a hex string.
-    Can verify from CLI with `shasum -a 256 path/to/file`
     """
     hash_function = hashlib.sha256()
     return gethash(filename, hash_function)

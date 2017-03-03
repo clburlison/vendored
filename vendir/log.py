@@ -1,7 +1,7 @@
 """
 Functions for logging
 TODO: Update print statements to be py3 compatible
-Borrowed heavily from Munki3 munkilib/munkilog & munkilib/display
+Borrowed heavily from Munki3.munkilib.munkilog & Munki3.munkilib.display
 
 Useage:
     info("an info message here")        default level verbosity
