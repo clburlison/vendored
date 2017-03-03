@@ -11,12 +11,11 @@ To keep track of progress look at the [Master list](https://github.com/clburliso
 
 ## Usage
 
-**Requires:**
-* Apple Command Line Tools (installable with `xcode-select --install`)
-* Python 2.7. Not compatible with Python3 at this time.
-
 Currently parts of this project are working. You can run `./build.py` to build and optionally package some of these pieces. Or `cd` into one of the subfolders and run `python setup.py` directly (the help is quite 'helpful'). This will give you the most control at this point until the build script matures and has more arguments added.
 
+### Requires:
+* Apple Command Line Tools (installable with `xcode-select --install`)
+* Python 2.7. Not compatible with Python3 at this time.
 
 ### Override
 Vendored was created to be customizable. As such, it is possbile to override almost every option. These overrides live in the `config.ini` file.
