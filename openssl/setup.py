@@ -81,6 +81,7 @@ def download_and_extract_openssl():
 
 
 def build(skip):
+    """This is the main processing step that builds openssl from source"""
     # Step 1: change into our build directory
     os.chdir(OPENSSL_BUILD_DIR)
     # Don't compile openssl if the skip option is passed

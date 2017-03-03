@@ -110,7 +110,7 @@ def patch():
                    ['_patch/make_tlsssl_data.py', '_src/make_ssl_data.py'],
                    ['_patch/tlsssl.py',          '_src/ssl.py'],
                   ]
-    log.info("Create our patched files...")
+    log.info("Create our patched files if they do not exist...")
     for dest, source in patch_pairs:
         if not os.path.isfile(os.path.join(CURRENT_DIR, dest)):
             source = os.path.join(CURRENT_DIR, source)
@@ -119,6 +119,7 @@ def patch():
                                 "{}.diff".format(os.path.basename(dest)))
             dest = os.path.join(CURRENT_DIR, dest)
             log.debug("Patching '{}'".format(dest))
+            # TODO: Validate the return code and exist if something didn't work
             _ = subprocess.check_output(['/usr/bin/patch',
                                          source,
                                          diff,
@@ -129,6 +130,8 @@ def patch():
         log.debug("Copying 'socketmodule.h' to the _patch dir")
         source = os.path.join(CURRENT_DIR, "_src", "socketmodule.h")
         shutil.copy(source, os.path.realpath(os.path.join(patch_dir)))
+
+    log.detail("All patch files have been created")
 
 
 def build():
