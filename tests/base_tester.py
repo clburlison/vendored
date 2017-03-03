@@ -14,8 +14,10 @@ import sys
 
 # patched ssl using tlsssl
 try:
+    print("Using tlsssl")
     import tlsssl as ssl
 except(ImportError):
+    print("Using stock python ssl module")
     import ssl
 
 PY_VER = sys.version_info
