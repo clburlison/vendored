@@ -19,17 +19,17 @@ Currently parts of this project are working. You can run `./build.py` to build a
 
 
 ### Override
-Vendored was created to be customizable. As such it is possbile to override almost ever option. These overrides live in the `config.ini` file.
+Vendored was created to be customizable. As such, it is possbile to override almost every option. These overrides live in the `config.ini` file.
 
-The `config.ini` file contains two sections: `[DEFAULT]` which contains the default values and `[override]` which is how you override values. A sample is shown below:
+The `config.ini` file contains two sections:
+* `[DEFAULT]` which contains the default values and
+* `[override]` which will override values from the default section.
 
-    ```xml
-    ############## general variables ##############
+A sample is shown below:
+
     base_install_path: /Library/CPE
     pkgid: com.clburlison
     pb_extra_args: --sign Developer ID Installer: Clayton Burlison
-
-    ```
 
 ## Creating a patch
 Some of these tools require patch files for compiling. If you're unfamiliar with creating a patch file the basics look a little something like:
