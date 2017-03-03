@@ -3,6 +3,7 @@ Setup script to compile tlsssl to run againt python 2.7 or higher.
 Has a dependency on openssl package being installed on this local machine
 """
 
+# standard libs
 from distutils.core import setup
 from distutils.extension import Extension
 from distutils.command.build_ext import build_ext
@@ -15,7 +16,7 @@ import re
 import sys
 import inspect
 
-# Module level imports. This isn't a true python package so this looks hacky.
+# our libs. kind of hacky since this isn't a valid python package.
 CURRENT_DIR = os.path.dirname(
     os.path.abspath(inspect.getfile(inspect.currentframe())))
 PARENT_DIR = os.path.dirname(CURRENT_DIR)
@@ -165,7 +166,7 @@ def download_python_source_files():
                                  "due to {}\n".format(fname, err))
     os.chdir(CURRENT_DIR)
     if should_bail:
-        sys.exit()
+        sys.exit(1)
 
 
 def prep():
