@@ -24,11 +24,11 @@ Much thanks to the [Google MacOps](https://github.com/google/macops/) team for o
 
 Based off of works by:
 
-| Author  |  Project Link |  | Organization  |  Project Link |
-|---------|---------------|--|---------------|---------------|
-| [@pudquick](https://github.com/pudquick) | [pudquick/tlsssl](https://github.com/pudquick/tlsssl) |  | [Munki](https://github.com/munki) | [munkilib](https://github.com/munki/munki/blob/master/code/client/munkilib/) |
-|  |  |  | [Google Inc.](https://github.com/google/macops) | [google/macops packages](https://github.com/google/macops/tree/master/packages) |
-
+| Author/Organization  |  Project Link |
+|----------------------|---------------|
+[@pudquick](https://github.com/pudquick) | [pudquick/tlsssl](https://github.com/pudquick/tlsssl)
+[Munki](https://github.com/munki) | [munkilib](https://github.com/munki/munki/blob/master/code/client/munkilib/)
+[Google Inc.](https://github.com/google/macops) | [google/macops packages](https://github.com/google/macops/tree/master/packages)
 
 ## License
 
