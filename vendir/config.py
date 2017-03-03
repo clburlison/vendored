@@ -21,3 +21,7 @@ def ConfigSectionMap():
         # Use the key from override if defined else use DEFAULT key
         opts[key] = config.get('override', key)
     return opts
+
+
+if __name__ == '__main__':
+    print 'This is a library of support tools'

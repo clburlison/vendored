@@ -47,3 +47,7 @@ def getsha256hash(filename):
     """
     hash_function = hashlib.sha256()
     return gethash(filename, hash_function)
+
+
+if __name__ == '__main__':
+    print 'This is a library of support tools'

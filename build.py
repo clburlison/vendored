@@ -10,26 +10,26 @@ from vendir import config
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
-def buildOpenSSL():
+def build_openssl():
     """Build the openssl project locally and optionally package the binary."""
     openssl_dir = os.path.join(CURRENT_DIR, 'openssl')
     os.chdir(openssl_dir)
     print("Building openssl...")
-    _ = subprocess.check_output(['make', 'build-pkg'])
+    os.system(' '.join(['/usr/bin/python', 'setup.py', '-vv', '-p', '-b']))
 
 
-def buildTslssl():
+def build_tlsssl():
     """Build the tslssl project locally and optionally package the binary."""
     tslssl_dir = os.path.join(CURRENT_DIR, 'tlsssl')
     os.chdir(tslssl_dir)
     print("Building tslssl...")
-    _ = subprocess.check_output(['python', 'setup.py', 'build'])
+    _ = subprocess.check_output(['/usr/bin/python', 'setup.py', 'build'])
 
 
 def main():
     """Main routine"""
-    buildOpenSSL()
-    buildTslssl()
+    build_openssl()
+#    build_tlsssl()
 
 
 if __name__ == '__main__':
