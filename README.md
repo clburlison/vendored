@@ -17,6 +17,20 @@ To keep track of progress look at the [Master list](https://github.com/clburliso
 
 Currently parts of this project are working. You can run `./build.py` to build and optionally package some of these pieces. Or `cd` into one of the subfolders and run `python setup.py` directly (the help is quite 'helpful'). This will give you the most control at this point until the build script matures and has more arguments added.
 
+
+### Override
+Vendored was created to be customizable. As such it is possbile to override almost ever option. These overrides live in the `config.ini` file.
+
+The `config.ini` file contains two sections: `[DEFAULT]` which contains the default values and `[override]` which is how you override values. A sample is shown below:
+
+    ```xml
+    ############## general variables ##############
+    base_install_path: /Library/CPE
+    pkgid: com.clburlison
+    pb_extra_args: --sign Developer ID Installer: Clayton Burlison
+
+    ```
+
 ## Creating a patch
 Some of these tools require patch files for compiling. If you're unfamiliar with creating a patch file the basics look a little something like:
 
