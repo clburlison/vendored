@@ -4,12 +4,9 @@ Setup script to compile OpenSSL 1.0.1+
 
 # standard libs
 from distutils.dir_util import mkpath
-import urllib2
 import os
-import stat
 import shutil
 import subprocess
-import re
 import sys
 import inspect
 import tempfile
@@ -36,67 +33,58 @@ BASE_INSTALL_PATH_S = CONFIG['base_install_path'].lstrip('/')
 def download_and_extract_openssl():
     """Download openssl distribution from the internet and extract it to
     openssl_build_dir."""
-    if not os.path.isdir(OPENSSL_BUILD_DIR):
-        mkpath(OPENSSL_BUILD_DIR)
+    if os.path.isdir(OPENSSL_BUILD_DIR):
+        shutil.rmtree(OPENSSL_BUILD_DIR, ignore_errors=True)
+    mkpath(OPENSSL_BUILD_DIR)
     # Download openssl
     log.info("Downloading OpenSSL...")
     temp_filename = os.path.join(tempfile.mkdtemp(), 'tempdata')
-    f = open(temp_filename, 'wb')
-    try:
-        # Based off http://stackoverflow.com/a/2030027. Not in love with the
-        # implementation.
-        remote_file = urllib2.urlopen(CONFIG['openssl_dist'])
-        try:
-            total_size = remote_file.info().getheader('Content-Length').strip()
-            header = True
-        except AttributeError:
-            # a response doesn't always include the "Content-Length" header
-            header = False
-        if header:
-            total_size = int(total_size)
-        bytes_so_far = 0
-        chunk_size = 131072
-        while True:
-            buffer = remote_file.read(chunk_size)
-            if not buffer:
-                sys.stdout.write('\n')
-                break
-
-            bytes_so_far += len(buffer)
-            f.write(buffer)
-            if not header:
-                total_size = bytes_so_far  # unknown size
-
-            percent = float(bytes_so_far) / total_size
-            percent = round(percent*100, 2)
-            log.debug("Downloaded %d of %d bytes (%0.2f%%)\r" % (
-                bytes_so_far, total_size, percent))
-    except(urllib2.HTTPError, urllib2.URLError,
-           OSError, IOError) as err:
-        should_bail = True
-        log.error("Unable to download 'OpenSSL' "
-                  "due to {}\n".format(err))
+    cmd = ['/usr/bin/curl', '--show-error', '--no-buffer',
+           '--fail', '--progress-bar',
+           '--speed-time', '30',
+           '--location',
+           '--url', CONFIG['openssl_dist'],
+           '--output', temp_filename]
+    # We are calling os.system so we can get download progress live
+    rc = os.WIFEXITED(os.system(' '.join(cmd)))
+    if rc == 0 or rc is True:
+        log.debug("OpenSSL download sucessful")
+    else:
+        log.error("OpenSSL download failed with exit code: '{}'".format(rc))
         sys.exit(1)
+
+    # Verify openssl download hash
+    # temp_filename = "/Users/clburlison/Downloads/openssl-1.1.0e.tar.gz"
+    download_hash = hash_helper.getsha256hash(temp_filename)
+    config_hash = CONFIG['openssl_dist_hash']
+    if download_hash != config_hash:
+        log.error("Hash verification of OpenSSL download has failed. Download "
+                  "hash of '{}' does not match config hash '{}'".format(
+                    download_hash, config_hash))
+        sys.exit(1)
+    else:
+        log.detail("Hash verification of OpenSSL sucessful")
 
     # Extract openssl to the openssl_build_dir
     log.info("Extracting OpenSSL...")
     cmd = ['/usr/bin/tar', '-xf', temp_filename, '-C', OPENSSL_BUILD_DIR,
-           '--strip-components=1']
+           '--strip-components', '1']
     proc = subprocess.Popen(cmd, shell=False, bufsize=-1,
                             stdin=subprocess.PIPE,
-                            stdout=sys.stdout, stderr=subprocess.PIPE)
+                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     (output, dummy_error) = proc.communicate()
+    if proc.returncode == 0:
+        log.debug("Extraction completed sucessfully")
+    else:
+        log.error("Extraction has failed: {}".format(dummy_error))
     os.remove(temp_filename)
 
 
 def build(skip):
     # Step 1: change into our build directory
     os.chdir(OPENSSL_BUILD_DIR)
-    # Don't compile openssl if the output build dir exists and the skip option
-    # is passed. Helpful for development purposes
-    if not (skip and os.path.isdir(os.path.join(OPENSSL_BUILD_DIR,
-                                                BASE_INSTALL_PATH_S,
-                                                'openssl'))):
+    # Don't compile openssl if the skip option is passed
+    if not skip:
         # Step 2: Run the Configure setup of OpenSSL to set correct paths
         openssl_tmp_dir = os.path.join(OPENSSL_BUILD_DIR,
                                        BASE_INSTALL_PATH_S, 'openssl')
@@ -111,24 +99,25 @@ def build(skip):
                                 stdout=sys.stdout, stderr=subprocess.PIPE)
         (output, dummy_error) = proc.communicate()
         # Step 3: compile openssl. this will take a while.
-        # FIXME: This is really poorly done. I should check return codes.
-        #        I was unable to get live output to stdout even with
-        #        os.system(), so I might need help making this step better.
+        # FIXME: We need to check return codes.
         log.info("Compiling OpenSSL. This will take a while time...")
         log.detail("Running make depend routine...")
         cmd = ['/usr/bin/make', '-s', 'depend']  # no live output
-        os.system(' '.join(cmd))
+        proc = subprocess.Popen(cmd, bufsize=-1, stdout=sys.stdout)
+        (output, dummy_error) = proc.communicate()
         sys.stdout.flush()  # does this help?
 
         log.detail("Running make all routine...")
         cmd = ['/usr/bin/make', '-s', 'all']  # has live output
-        os.system(' '.join(cmd))
+        proc = subprocess.Popen(cmd, bufsize=-1, stdout=sys.stdout)
+        (output, dummy_error) = proc.communicate()
         sys.stdout.flush()  # does this help?
 
         log.detail("Running make install routine. "
                    "This command is the longest...")
         cmd = ['/usr/bin/make', 'install']  # has live output. LOTS of it.
-        os.system(' '.join(cmd))
+        proc = subprocess.Popen(cmd, bufsize=-1, stdout=sys.stdout)
+        (output, dummy_error) = proc.communicate()
         sys.stdout.flush()  # does this help?
     else:
         log.info("OpenSSL compile skipped due to -skip option")
@@ -223,25 +212,37 @@ def main():
         sys.exit(1)
     args = parser.parse_args()
 
-    # set logging verbosity level
+    # set argument variables
     log.verbose = args.verbose
+    skip = args.skip
 
     if args.build:
-        download_and_extract_openssl()
-        build(skip=args.skip)
+        check_dir = os.path.isdir(os.path.join(OPENSSL_BUILD_DIR,
+                                  BASE_INSTALL_PATH_S,
+                                  'openssl'))
+        # When the skip option is passed and the build directory exists, skip
+        # download and compiling of openssl. Note we still do linking.
+        if not (skip and check_dir):
+            download_and_extract_openssl()
+            # reset trigger flag as we needed to download openssl
+            skip = False
+        build(skip=skip)
 
     if args.pkg:
         log.info("Building a package for OpenSSL...")
+        # Change back into our local directory so we can output our package
+        # via relative paths
+        os.chdir(CURRENT_DIR)
         version = CONFIG['openssl_version']
         rc = package.pkg(root=os.path.join(OPENSSL_BUILD_DIR, 'Library'),
                          version=version,
                          output='openssl.pkg'.format(version),
                          install_location='/Library',
                          )
-        if rc is not 0:
-            log.error("Looks like Package creation failed")
-        else:
+        if rc == 0:
             log.info("OpenSSL packaged properly")
+        else:
+            log.error("Looks like Package creation failed")
 
 
 if __name__ == '__main__':
