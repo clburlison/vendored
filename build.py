@@ -26,7 +26,7 @@ def build_tlsssl():
     """Build the tslssl project locally and optionally package the binary."""
     tslssl_dir = os.path.join(CURRENT_DIR, 'tlsssl')
     os.chdir(tslssl_dir)
-    cmd = ['/usr/bin/python', 'setup.py', 'build']
+    cmd = ['/usr/bin/python', 'setup.py', '-vv', '-p', '-b']
     os.system(' '.join(cmd))
 
 

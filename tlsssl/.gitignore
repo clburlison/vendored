@@ -1,9 +1,8 @@
-# Ignore
-*.h
-*.c
-*.py
-build
+# Ignore everything
+*
 
 # But not these files...
 !.gitignore
 !setup.py
+!_diffs
+!README.md
