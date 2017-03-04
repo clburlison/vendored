@@ -3,7 +3,7 @@ Vendored
 
 **THIS IS A WORK IN PROGRESS**
 
-The goal of this repo make it easy to "vendor" your own frameworks and programming languages in an easy and automated fashion.
+The goal of this repo is to make it easy to "vendor" your own frameworks and programming languages in an automated fashion.
 
 Once this project is complete you will be able to have own version of python, ruby, pyojbc bridge, openssl, and more all in one nice big package or multiple smaller packages for easy deployment.
 
