@@ -5,11 +5,15 @@ Has a dependency on openssl package being installed on this local machine
 
 # standard libs
 from distutils.dir_util import mkpath
+from distutils.dir_util import copy_tree
 import os
+import os.path
 import urllib2
 import shutil
 import subprocess
 import sys
+import stat
+import re
 import inspect
 import tempfile
 import argparse
@@ -26,27 +30,18 @@ from vendir import log  # noqa
 from vendir import package  # noqa
 
 CONFIG = config.ConfigSectionMap()
-
-# TODO: for when we make this into a package
-# mkdir -p /Library/Python/2.7/site-packages/tlsssl
-# cp build/lib.macosx-10.12-intel-2.7/{_tlsssl.so, tlsssl.py}
-#       /Library/Python/2.7/site-packages/tlsssl
-# mkdir -p /usr/local/lib/tlsssl
-# cp build/lib.macosx-10.12-intel-2.7/{libtlscrypto.dylib, libtlsssl.dylib}
-#       /usr/local/lib/tlsssl
-
-# TODO: These need to come from CONFIG
 # where an OpenSSL 1.0.1+ libssl.dylib and libcrypto.dylib are now
-LIBS_SRC = "/usr/local/opt/openssl/lib"
+LIBS_SRC = os.path.join(CONFIG['base_install_path'], 'openssl/lib')
 # where you'll want them eventually installed
-LIBS_DEST = "/usr/local/lib/tlsssl"
+LIBS_DEST = CONFIG['tlsssl_install_dir']
 # where the associated headers are
-HEADER_SRC = "/usr/local/opt/openssl/include"
+HEADER_SRC = os.path.join(CONFIG['base_install_path'], 'openssl/include')
 
 
 def download_python_source_files():
     """Download CPython source files from Github. Verify the sha hash and
     redownload if they do not match."""
+    log.info("Downloading and verifying python source files...")
     src_dir = os.path.join(CURRENT_DIR, '_src')
     if not os.path.exists(src_dir):
         log.debug("Creating _src directory...")
@@ -101,6 +96,7 @@ def download_python_source_files():
 
 def patch():
     """This step creates are patch source files for usage in the build phase"""
+    log.info("Creating our patch files for tlsssl...")
     patch_dir = os.path.join(CURRENT_DIR, '_patch')
     if not os.path.exists(patch_dir):
         log.debug("Creating _patch directory...")
@@ -110,7 +106,7 @@ def patch():
                    ['_patch/make_tlsssl_data.py', '_src/make_ssl_data.py'],
                    ['_patch/tlsssl.py',          '_src/ssl.py'],
                   ]
-    log.info("Create our patched files if they do not exist...")
+    log.detail("Create our patch files if they do not exist...")
     for dest, source in patch_pairs:
         if not os.path.isfile(os.path.join(CURRENT_DIR, dest)):
             source = os.path.join(CURRENT_DIR, source)
@@ -131,37 +127,56 @@ def patch():
         source = os.path.join(CURRENT_DIR, "_src", "socketmodule.h")
         shutil.copy(source, os.path.realpath(os.path.join(patch_dir)))
 
-    log.detail("All patch files have been created")
+    log.detail("All patch files have been created or exist...")
 
 
 def build():
     """This is the main processing step that builds tlsssl from source"""
-    # Step 1: make sure the _ssl_data.h header has been generated
-    ssl_data = os.path.join(CURRENT_DIR, "_ssl_data.h")
+    log.info("Building tlsssl...")
+    patch_dir = os.path.join(CURRENT_DIR, '_patch')
+    # Step 2: make sure the _ssl_data.h header has been generated
+    ssl_data = os.path.join(patch_dir, "_ssl_data.h")
     if not os.path.isfile(ssl_data):
+        log.debug("Generate _ssl_data.h header...")
         tool_path = os.path.join(CURRENT_DIR, "_patch", "make_tlsssl_data.py")
         # Run the generating script
         _ = subprocess.check_output(['/usr/bin/python',
                                     tool_path,
                                     HEADER_SRC,
                                     ssl_data])
-    # Step 2: remove the temporary work directory under the build dir
-    workspace_rel = os.path.join(self.build_temp, "../_temp_libs")
+    # Step 3: remove the temporary work directory under the build dir
+    build_dir = os.path.join(CURRENT_DIR, 'build')
+    if os.path.exists(build_dir):
+        log.debug("Removing build directory...")
+        shutil.rmtree(build_dir, ignore_errors=True)
+    log.debug("Creating build directories...")
+    mkpath(build_dir)
+    # Step 3.5: copy tlsssl.py to the build directory
+    log.info("Copy 'tlsssl.py' to the build directory...")
+    shutil.copy(os.path.join(CURRENT_DIR, '_patch/tlsssl.py'), build_dir)
+    workspace_rel = os.path.join(build_dir)
     workspace_abs = os.path.realpath(workspace_rel)
-    shutil.rmtree(workspace_abs, ignore_errors=True)
-    # Step 3: make the temporary work directory exist
-    mkpath(workspace_rel)
     # Step 4: copy and rename the dylibs to there
+    log.detail("Copying dylibs to build directory")
     ssl_src = os.path.join(LIBS_SRC, "libssl.dylib")
     crypt_src = os.path.join(LIBS_SRC, "libcrypto.dylib")
     ssl_tmp = os.path.join(workspace_abs, "libtlsssl.dylib")
     crypt_tmp = os.path.join(workspace_abs, "libtlscrypto.dylib")
-    shutil.copy(ssl_src, ssl_tmp)
-    shutil.copy(crypt_src, crypt_tmp)
+    try:
+        shutil.copy(ssl_src, ssl_tmp)
+        shutil.copy(crypt_src, crypt_tmp)
+    except(IOError) as err:
+        log.warn("tlsssl has a dependency on OpenSSL 1.0.1+ as such you "
+                 "must build and install OpenSSL from ../openssl.")
+        log.error("Build failed and will now exit!")
+        log.error("{}".format(err))
+        sys.exit(1)
     # Step 5: change the ids of the dylibs
+    log.detail("Changing the ids of the dylibs...")
     ssl_dest = os.path.join(LIBS_DEST, "libtlsssl.dylib")
     crypt_dest = os.path.join(LIBS_DEST, "libtlscrypto.dylib")
     # (need to temporarily mark them as writeable)
+    # NOTE: I don't think this I needed any longer
     st = os.stat(ssl_tmp)
     os.chmod(ssl_tmp, st.st_mode | stat.S_IWUSR)
     st = os.stat(crypt_tmp)
@@ -189,29 +204,50 @@ def build():
                                  crypt_dest,
                                  ssl_tmp])
     # Step 7: cleanup permissions
+    # NOTE: Same. I don't think this I needed any longer
     st = os.stat(ssl_tmp)
     os.chmod(ssl_tmp, st.st_mode & ~stat.S_IWUSR)
     st = os.stat(crypt_tmp)
     os.chmod(crypt_tmp, st.st_mode & ~stat.S_IWUSR)
     # Step 8: patch in the additional paths and linkages
-    self.include_dirs.insert(0, HEADER_SRC)
-    self.library_dirs.insert(0, workspace_abs)
-    self.libraries.insert(0, "tlsssl")
-    # # After we're done compiling, lets put the libs in with the build
-    # # and clean up the temp directory
-    # if not self.dry_run:
-    #     # Step 1: clear out stale dylibs that may be in the final build dir
-    #     ssl_build = os.path.join(self.build_lib, "libtlsssl.dylib")
-    #     crypt_build = os.path.join(self.build_lib, "libtlscrypto.dylib")
-    #     if os.path.isfile(ssl_build):
-    #         os.remove(ssl_build)
-    #     if os.path.isfile(crypt_build):
-    #         os.remove(crypt_build)
-    #     # Step 2: move the dylibs into the final build directory
-    #     shutil.move(ssl_tmp, self.build_lib)
-    #     shutil.move(crypt_tmp, self.build_lib)
-    #     # Step 3: get rid of the temp lib directory
-    #     shutil.rmtree(workspace_abs, ignore_errors=True)
+    # NOTE: This command will output a few warnings that are hidden at
+    #       build time. Just an FYI in case this needs to be resolved in
+    #       the future.
+    system_python_path = ("/System/Library/Frameworks/Python.framework/"
+                          "Versions/2.7/include/python2.7")
+    cmd = ["cc", "-fno-strict-aliasing", "-fno-common", "-dynamic", "-arch",
+           "x86_64", "-arch", "i386", "-g", "-Os", "-pipe", "-fno-common",
+           "-fno-strict-aliasing", "-fwrapv", "-DENABLE_DTRACE", "-DMACOSX",
+           "-DNDEBUG", "-Wall", "-Wstrict-prototypes", "-Wshorten-64-to-32",
+           "-DNDEBUG", "-g", "-fwrapv", "-Os", "-Wall", "-Wstrict-prototypes",
+           "-DENABLE_DTRACE", "-arch", "x86_64", "-arch", "i386", "-pipe",
+           "-I{}".format(HEADER_SRC),
+           "-I{}".format(system_python_path),
+           "-c", "_patch/_tlsssl.c", "-o", "build/_tlsssl.o"]
+    proc = subprocess.Popen(cmd, shell=False, bufsize=-1,
+                            stdin=subprocess.PIPE,
+                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    (output, dummy_error) = proc.communicate()
+    if proc.returncode == 0:
+        log.debug("Build of '_tlsssl.o' completed sucessfully")
+    else:
+        log.error("Build has failed: {}".format(dummy_error))
+
+    cmd = ["cc", "-bundle", "-undefined", "dynamic_lookup", "-arch",
+           "x86_64", "-arch", "i386", "-Wl,-F.", "build/_tlsssl.o",
+           "-L{}".format(workspace_abs), "-ltlsssl", "-ltlsssl", "-o",
+           "build/_tlsssl.so"]
+    proc = subprocess.Popen(cmd, shell=False, bufsize=-1,
+                            stdin=subprocess.PIPE,
+                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    (output, dummy_error) = proc.communicate()
+    if proc.returncode == 0:
+        log.debug("Build of '_tlsssl.so' completed sucessfully")
+    else:
+        log.error("Build has failed: {}".format(dummy_error))
+
+    log.debug("Remove temp '_tlsssl.o' from build directory")
+    os.remove(os.path.join(build_dir, "_tlsssl.o"))
 
 
 def main():
@@ -238,24 +274,51 @@ def main():
     if args.build:
         download_python_source_files()
         patch()
-        # build()
+        build()
 
     if args.pkg:
-        log.warn("Building a package for tlsssl is not supported yet")
-        # log.info("Building a package for tlsssl...")
-        # # Change back into our local directory so we can output our package
-        # # via relative paths
-        # os.chdir(CURRENT_DIR)
-        # version = CONFIG['tlsssl_version']
-        # rc = package.pkg(root=os.path.join(OPENSSL_BUILD_DIR, 'Library'),
-        #                  version=version,
-        #                  output='openssl.pkg'.format(version),
-        #                  install_location='/Library',
-        #                  )
-        # if rc == 0:
-        #     log.info("OpenSSL packaged properly")
-        # else:
-        #     log.error("Looks like Package creation failed")
+        # FIXME: This has grown out of control. Move this outside of main!
+        log.info("Building a package for tlsssl...")
+        version = CONFIG['tlsssl_version']
+        # we need to setup the payload
+        payload_dir = os.path.join(CURRENT_DIR, 'payload')
+        if os.path.exists(payload_dir):
+            log.debug("Removing payload directory...")
+            shutil.rmtree(payload_dir, ignore_errors=True)
+        log.debug("Creating payload directory...")
+        payload_tmp_dir = os.path.join(payload_dir, LIBS_DEST.lstrip('/'))
+        mkpath(payload_tmp_dir)
+
+        log.detail("Copying build files into payload directory")
+        copy_tree('build', str(payload_tmp_dir))
+        log.debug("Write __init__.py file so python sees tlsssl as a module")
+        f = open(os.path.join(payload_tmp_dir, '__init__.py'), 'w')
+        f.write("# this is needed to make Python recognize the "
+                "directory as a module package")
+        f.close()
+
+        pth_fname = CONFIG['pth_fname']
+        # if the pth_fname key is set write the .pth file
+        if pth_fname is not None or pth_fname is not '':
+            log.debug("Write the '.pth' file so native python can read "
+                      "this module without a sys.path.insert")
+            python_sys = "/Library/Python/2.7/site-packages/"
+            python_sys_local = os.path.join("payload", python_sys.lstrip('/'))
+            log.debug("Make site-packages inside of payload")
+            mkpath(python_sys_local)
+            pth_file = os.path.join(python_sys_local, pth_fname)
+            f = open(pth_file, 'w')
+            f.write(os.path.dirname(LIBS_DEST))
+            f.close()
+
+        rc = package.pkg(root='payload',
+                         version=version,
+                         output='tlsssl-{}.pkg'.format(version),
+                         )
+        if rc == 0:
+            log.info("tlsssl packaged properly")
+        else:
+            log.error("Looks like package creation failed")
 
 
 if __name__ == '__main__':

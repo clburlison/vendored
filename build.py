@@ -7,9 +7,7 @@ import os
 import sys
 import subprocess
 
-
 from vendir import config
-from vendir import log
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -32,9 +30,6 @@ def build_tlsssl():
 
 def main():
     """Main routine"""
-    # set logging verbosity level
-    log.verbose = 1
-
     build_openssl()
     build_tlsssl()
 
