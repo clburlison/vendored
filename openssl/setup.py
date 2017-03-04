@@ -237,13 +237,13 @@ def main():
         version = CONFIG['openssl_version']
         rc = package.pkg(root=os.path.join(OPENSSL_BUILD_DIR, 'Library'),
                          version=version,
-                         output='openssl.pkg'.format(version),
+                         output='openssl-{}.pkg'.format(version),
                          install_location='/Library',
                          )
         if rc == 0:
             log.info("OpenSSL packaged properly")
         else:
-            log.error("Looks like Package creation failed")
+            log.error("Looks like package creation failed")
 
 
 if __name__ == '__main__':
