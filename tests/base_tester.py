@@ -5,7 +5,9 @@ This is a utility script designed to allow you to run either py2 or py3 via:
 in order to verify TLS 1.2 support and the version of openssl that python is
 linked against.
 
-Thank you to Hanno Böck for providing https://fancyssl.hboeck.de/ for free.
+The TEST_URL that we are using has TLSv1.2 enabled and SSLv2/SSLv3 disabled.
+Since the stock OpenSSL (0.9.8zh) that ships with macOS is out of date the test
+connection to a TLSv1.2 site will fail.
 """
 
 # standard libs
@@ -21,6 +23,8 @@ except(ImportError):
     print("Using stock python ssl module")
 
 PY_VER = sys.version_info
+# TEST_URL = "https://developer.apple.com/"
+TEST_URL = "https://fancyssl.hboeck.de/"
 
 print("Our python is located: {}".format(sys.executable))
 print("Our python version: {}.{}.{}".format(PY_VER[0], PY_VER[1], PY_VER[2]))
@@ -32,17 +36,16 @@ ctx = ssl.create_default_context()
 if PY_VER[0] == 2:
     import urllib2
     try:
-        a = urllib2.urlopen('https://fancyssl.hboeck.de/', context=ctx)
-        print(a)
-        print("SUCCESS: Connection was made using TLS1.2")
+        a = urllib2.urlopen(TEST_URL, context=ctx)
+        print("SUCCESS: Connection was made using TLS")
     except(urllib2.URLError) as e:
         print("ERROR: {}".format(e.reason))
 
 if PY_VER[0] == 3:
     import urllib.request
     try:
-        a = urllib.request.urlopen('https://fancyssl.hboeck.de/', context=ctx)
+        a = urllib.request.urlopen(TEST_URL, context=ctx)
         print(a)
-        print("SUCCESS: Connection was made using TLS1.2")
+        print("SUCCESS: Connection was made using TLS")
     except(ssl.SSLError, urllib.error.URLError) as e:
         print("ERROR: {}".format(e.reason))
