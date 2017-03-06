@@ -16,7 +16,7 @@ def build_openssl():
     """Build the openssl project locally and optionally package the binary."""
     openssl_dir = os.path.join(CURRENT_DIR, 'openssl')
     os.chdir(openssl_dir)
-    cmd = ['/usr/bin/python', 'setup.py', '-vv', '-p', '-b']
+    cmd = ['/usr/bin/python', 'setup.py', '-vv', '-p', '-b', '-s']
     os.system(' '.join(cmd))
 
 
