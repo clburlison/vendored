@@ -1,9 +1,13 @@
 """
-Setup script to compile OpenSSL 1.0.1+
+Setup script to compile OpenSSL for macOS
+Supported versions:
+  * 1.0.2
+  * 1.1.0
 """
 
 # standard libs
 from distutils.dir_util import mkpath
+from distutils.version import LooseVersion
 import os
 import shutil
 import subprocess
@@ -22,12 +26,15 @@ from vendir import config  # noqa
 from vendir import hash_helper  # noqa
 from vendir import log  # noqa
 from vendir import package  # noqa
+from vendir import runner  # noqa
 
 
 CONFIG = config.ConfigSectionMap()
 OPENSSL_BUILD_DIR = os.path.abspath(CONFIG['openssl_build_dir'])
 BASE_INSTALL_PATH = CONFIG['base_install_path']
 BASE_INSTALL_PATH_S = CONFIG['base_install_path'].lstrip('/')
+PKG_PAYLOAD_DIR = os.path.join(OPENSSL_BUILD_DIR, 'payload')
+OPENSSL_VERSION = CONFIG['openssl_version']
 
 
 def download_and_extract_openssl():
@@ -37,7 +44,7 @@ def download_and_extract_openssl():
         shutil.rmtree(OPENSSL_BUILD_DIR, ignore_errors=True)
     mkpath(OPENSSL_BUILD_DIR)
     # Download openssl
-    log.info("Downloading OpenSSL...")
+    log.info("Downloading OpenSSL from: {}".format(CONFIG['openssl_dist']))
     temp_filename = os.path.join(tempfile.mkdtemp(), 'tempdata')
     cmd = ['/usr/bin/curl', '--show-error', '--no-buffer',
            '--fail', '--progress-bar',
@@ -46,7 +53,7 @@ def download_and_extract_openssl():
            '--url', CONFIG['openssl_dist'],
            '--output', temp_filename]
     # We are calling os.system so we can get download progress live
-    rc = os.WIFEXITED(os.system(' '.join(cmd)))
+    rc = runner.system(cmd)
     if rc == 0 or rc is True:
         log.debug("OpenSSL download sucessful")
     else:
@@ -54,7 +61,6 @@ def download_and_extract_openssl():
         sys.exit(1)
 
     # Verify openssl download hash
-    # temp_filename = "/Users/clburlison/Downloads/openssl-1.1.0e.tar.gz"
     download_hash = hash_helper.getsha256hash(temp_filename)
     config_hash = CONFIG['openssl_dist_hash']
     if download_hash != config_hash:
@@ -69,11 +75,8 @@ def download_and_extract_openssl():
     log.info("Extracting OpenSSL...")
     cmd = ['/usr/bin/tar', '-xf', temp_filename, '-C', OPENSSL_BUILD_DIR,
            '--strip-components', '1']
-    proc = subprocess.Popen(cmd, shell=False, bufsize=-1,
-                            stdin=subprocess.PIPE,
-                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    (output, dummy_error) = proc.communicate()
-    if proc.returncode == 0:
+    out = runner.Popen(cmd)
+    if out[2] == 0:
         log.debug("Extraction completed sucessfully")
     else:
         log.error("Extraction has failed: {}".format(dummy_error))
@@ -82,114 +85,67 @@ def download_and_extract_openssl():
 
 def build(skip):
     """This is the main processing step that builds openssl from source"""
+
     # Step 1: change into our build directory
     os.chdir(OPENSSL_BUILD_DIR)
     # Don't compile openssl if the skip option is passed
     if not skip:
         # Step 2: Run the Configure setup of OpenSSL to set correct paths
-        openssl_tmp_dir = os.path.join(OPENSSL_BUILD_DIR,
-                                       BASE_INSTALL_PATH_S, 'openssl')
+        openssl_install = os.path.join(BASE_INSTALL_PATH, 'openssl')
         log.info("Configuring OpenSSL...")
-        cmd = ['./Configure', '--prefix={}'.format(openssl_tmp_dir),
-               '--openssldir={}'.format(openssl_tmp_dir), 'no-ssl3', 'no-idea',
-               'no-zlib', 'no-comp', 'shared', 'darwin64-x86_64-cc',
-               'enable-ec_nistp_64_gcc_128'
+        cmd = ['./Configure',
+               '--prefix={}'.format(openssl_install),
+               '--openssldir={}'.format(openssl_install),
+               'darwin64-x86_64-cc',
+               'shared',
+               'enable-ec_nistp_64_gcc_128',
+               'no-comp'
                ]
-        proc = subprocess.Popen(cmd, shell=False, bufsize=-1,
-                                stdin=subprocess.PIPE,
-                                stdout=sys.stdout, stderr=subprocess.PIPE)
-        (output, dummy_error) = proc.communicate()
+        # OpenSSL 1.0 to 1.1 has some pretty major build differences. Manage
+        # the build control with the following
+        OLD_VERSION = None
+        # OpenSSL renamed this build flag so was less confusing
+        # https://github.com/openssl/openssl/commit/3c65577f1af1109beb8de06420efa09188981628
+        TMP_DIR_FLAG = None
+        if OPENSSL_VERSION > "1.1.0":
+            OLD_VERSION = False
+            TMP_DIR_FLAG = "DESTDIR"
+        else:
+            OLD_VERSION = True
+            TMP_DIR_FLAG = "INSTALL_PREFIX"
+        # If running 1.0 use runner.system() else runner.Popen()
+        if OLD_VERSION:
+            out = runner.system(cmd)
+        else:
+            out = runner.Popen(cmd)
+        log.debug("Configuring returned value: {}".format(out))
+
         # Step 3: compile openssl. this will take a while.
         # FIXME: We need to check return codes.
+        #        This command is required for OpenSSL lower than 1.1.0
+        if OLD_VERSION:
+            log.detail("Running OpenSSL make depend routine...")
+            cmd = ['/usr/bin/make', 'depend']
+            proc = subprocess.Popen(cmd, bufsize=-1, stdout=sys.stdout)
+            (output, dummy_error) = proc.communicate()
+            sys.stdout.flush()  # does this help?
+
         log.info("Compiling OpenSSL. This will take a while time...")
-        log.detail("Running make depend routine...")
-        cmd = ['/usr/bin/make', '-s', 'depend']  # no live output
+        log.detail("Running OpenSSL make routine...")
+        cmd = ['/usr/bin/make']
         proc = subprocess.Popen(cmd, bufsize=-1, stdout=sys.stdout)
         (output, dummy_error) = proc.communicate()
         sys.stdout.flush()  # does this help?
 
-        log.detail("Running make all routine...")
-        cmd = ['/usr/bin/make', '-s', 'all']  # has live output
-        proc = subprocess.Popen(cmd, bufsize=-1, stdout=sys.stdout)
-        (output, dummy_error) = proc.communicate()
-        sys.stdout.flush()  # does this help?
-
-        log.detail("Running make install routine. "
-                   "This command is the longest...")
-        cmd = ['/usr/bin/make', 'install']  # has live output. LOTS of it.
-        proc = subprocess.Popen(cmd, bufsize=-1, stdout=sys.stdout)
-        (output, dummy_error) = proc.communicate()
+        log.detail("Running OpenSSL make install routine...")
+        cmd = ['/usr/bin/make',
+               '{}={}'.format(TMP_DIR_FLAG, PKG_PAYLOAD_DIR),
+               'install']
+        print("ran a command: {}".format(' '.join(cmd)))
+        out = runner.Popen(cmd, stdout=sys.stdout)
         sys.stdout.flush()  # does this help?
     else:
         log.info("OpenSSL compile skipped due to -skip option")
-
-    # Step 4: change the ids of the dylibs
-    tmp_lib_dest = os.path.join(OPENSSL_BUILD_DIR, BASE_INSTALL_PATH_S,
-                                'openssl', 'lib')
-    tmp_bin_dest = os.path.join(OPENSSL_BUILD_DIR, BASE_INSTALL_PATH_S,
-                                'openssl', 'bin')
-    tgt_lib_dest = os.path.join(BASE_INSTALL_PATH,
-                                'openssl', 'lib')
-
-    # NOTE: These aren't using os.path.joins...it should be fine. Verify!
-    log.info("Linking libraries and binaries to the correct path...")
-    log.detail("Linking 1/6...")
-    cmd = ['/usr/bin/install_name_tool', '-change',
-           '{}/libcrypto.dylib'.format(tgt_lib_dest),
-           '{}/libcrypto.dylib'.format(tmp_lib_dest)]
-    proc = subprocess.Popen(cmd, shell=False, bufsize=-1,
-                            stdin=subprocess.PIPE,
-                            stdout=sys.stdout, stderr=subprocess.PIPE)
-    (output, dummy_error) = proc.communicate()
-
-    log.detail("Linking 2/6...")
-    cmd = ['/usr/bin/install_name_tool', '-change',
-           '{}/libssl.dylib'.format(tgt_lib_dest),
-           '{}/libssl.dylib'.format(tmp_lib_dest)]
-    proc = subprocess.Popen(cmd, shell=False, bufsize=-1,
-                            stdin=subprocess.PIPE,
-                            stdout=sys.stdout, stderr=subprocess.PIPE)
-    (output, dummy_error) = proc.communicate()
-
-    log.detail("Linking 3/6...")
-    cmd = ['/usr/bin/install_name_tool', '-change',
-           '{}/libssl.dylib'.format(tmp_lib_dest),
-           '{}/libssl.dylib'.format(tgt_lib_dest),
-           '{}/openssl'.format(tmp_bin_dest)]
-    proc = subprocess.Popen(cmd, shell=False, bufsize=-1,
-                            stdin=subprocess.PIPE,
-                            stdout=sys.stdout, stderr=subprocess.PIPE)
-    (output, dummy_error) = proc.communicate()
-
-    log.detail("Linking 4/6...")
-    cmd = ['/usr/bin/install_name_tool', '-change',
-           '{}/libcrypto.dylib'.format(tmp_lib_dest),
-           '{}/libcrypto.dylib'.format(tgt_lib_dest),
-           '{}/openssl'.format(tmp_bin_dest)]
-    proc = subprocess.Popen(cmd, shell=False, bufsize=-1,
-                            stdin=subprocess.PIPE,
-                            stdout=sys.stdout, stderr=subprocess.PIPE)
-    (output, dummy_error) = proc.communicate()
-
-    log.detail("Linking 5/6...")
-    cmd = ['/usr/bin/install_name_tool', '-change',
-           '{}/libssl.dylib'.format(tmp_lib_dest),
-           '{}/libssl.dylib'.format(tgt_lib_dest),
-           '{}/libcrypto.dylib'.format(tmp_lib_dest)]
-    proc = subprocess.Popen(cmd, shell=False, bufsize=-1,
-                            stdin=subprocess.PIPE,
-                            stdout=sys.stdout, stderr=subprocess.PIPE)
-    (output, dummy_error) = proc.communicate()
-
-    log.detail("Linking 6/6...")
-    cmd = ['/usr/bin/install_name_tool', '-change',
-           '{}/libcrypto.dylib'.format(tmp_lib_dest),
-           '{}/libcrypto.dylib'.format(tgt_lib_dest),
-           '{}/libssl.dylib'.format(tmp_lib_dest)]
-    proc = subprocess.Popen(cmd, shell=False, bufsize=-1,
-                            stdin=subprocess.PIPE,
-                            stdout=sys.stdout, stderr=subprocess.PIPE)
-    (output, dummy_error) = proc.communicate()
 
 
 def main():
@@ -218,15 +174,18 @@ def main():
     skip = args.skip
 
     if args.build:
-        check_dir = os.path.isdir(os.path.join(OPENSSL_BUILD_DIR,
-                                  BASE_INSTALL_PATH_S,
-                                  'openssl'))
+        log.info("Bulding OpenSSL...")
+        check_dir = os.path.isdir(PKG_PAYLOAD_DIR)
         # When the skip option is passed and the build directory exists, skip
         # download and compiling of openssl. Note we still do linking.
-        if not (skip and check_dir):
+        if (skip and check_dir):
+            log.debug("Skip flag was provided. We will not compile OpenSSL "
+                      "on this run.")
+        else:
             download_and_extract_openssl()
             # reset trigger flag as we needed to download openssl
             skip = False
+
         build(skip=skip)
 
     if args.pkg:
@@ -235,10 +194,9 @@ def main():
         # via relative paths
         os.chdir(CURRENT_DIR)
         version = CONFIG['openssl_version']
-        rc = package.pkg(root=os.path.join(OPENSSL_BUILD_DIR, 'Library'),
+        rc = package.pkg(root=PKG_PAYLOAD_DIR,
                          version=version,
                          output='openssl-{}.pkg'.format(version),
-                         install_location='/Library',
                          )
         if rc == 0:
             log.info("OpenSSL packaged properly")
