@@ -24,8 +24,8 @@ def pkg(root,
     pretty reconizable for most admins. `output` is the path so make sure
     and attach the pkg extension.
 
-    This function will return the exit code from the pkgbuild command. So if
-    you don't get a zero something went wrong!
+    Return:
+      The exit code from pkgbuild. If non-zero an error has occurred
     """
     cmd = ['/usr/bin/pkgbuild', '--root', root,
            '--install-location', install_location,

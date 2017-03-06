@@ -37,14 +37,18 @@ def _concat_message(msg, *args):
             warnings.warn(
                 'String format does not match concat args: %s'
                 % (str(sys.exc_info())))
-    return msg.rstrip()
+    # if dealing with a string use rstrip()
+    if isinstance(msg, basestring):
+        return msg.rstrip()
+    else:
+        return msg
 
 
 def info(msg, *args):
     """
     Displays info messages.
     """
-    msg = _concat_message(msg, *args)
+    msg = _concat_message(str(msg), *args)
     if verbose > 0:
         print '    %s' % msg.encode('UTF-8')
         sys.stdout.flush()
@@ -56,7 +60,7 @@ def detail(msg, *args):
     These are usually logged only, but can be printed to
     stdout if verbose is set greater than 1
     """
-    msg = _concat_message(msg, *args)
+    msg = _concat_message(str(msg), *args)
     if verbose > 1:
         print '    %s' % msg.encode('UTF-8')
         sys.stdout.flush()
@@ -66,7 +70,7 @@ def debug(msg, *args):
     """
     Displays debug messages, formatting as needed.
     """
-    msg = _concat_message(msg, *args)
+    msg = _concat_message(str(msg), *args)
     if verbose > 2:
         print '    %s' % msg.encode('UTF-8')
         sys.stdout.flush()
