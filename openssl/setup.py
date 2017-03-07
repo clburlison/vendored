@@ -196,6 +196,7 @@ def main():
         version = CONFIG['openssl_version']
         rc = package.pkg(root=PKG_PAYLOAD_DIR,
                          version=version,
+                         identifier="{}.openssl".format(CONFIG['pkgid']),
                          output='openssl-{}.pkg'.format(version),
                          )
         if rc == 0:
