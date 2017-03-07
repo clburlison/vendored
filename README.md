@@ -49,6 +49,7 @@ This project uses works from:
 [@pudquick](https://github.com/pudquick) | [pudquick/tlsssl](https://github.com/pudquick/tlsssl)
 [Munki](https://github.com/munki) | [munkilib](https://github.com/munki/munki/blob/master/code/client/munkilib/)
 [Google Inc.](https://github.com/google/macops) | [google/macops packages](https://github.com/google/macops/tree/master/packages)
+[designContest](http://www.designcontest.com) | [Shopping bag icon](http://www.iconarchive.com/show/ecommerce-business-icons-by-designcontest/shopping-bag-icon.html)
 
 ## License
 
