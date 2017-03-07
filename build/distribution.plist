@@ -23,12 +23,12 @@
     <choice id="default"/>
     <!-- OpenSSL really needs to be installed. It is a dependency for others. Maybe just add it in the description.
      or I could change the visbility to false. -->
-    <choice id="com.clburlison.openssl" visible="true" selected="true" title="OpenSSL 1.0.2j">
+    <choice id="com.clburlison.openssl" visible="true" selected="true" title="OpenSSL 1.1.0e">
         <pkg-ref id="com.clburlison.openssl"/>
     </choice>
-    <pkg-ref id="com.clburlison.openssl" version="1.0.2j" onConclusion="none">openssl-1.0.2j.pkg</pkg-ref>
-    <choice id="com.clburlison.python" visible="true" title="Python 2.7.12">
+    <pkg-ref id="com.clburlison.openssl" version="1.1.0e" onConclusion="none">openssl-1.1.0e.pkg</pkg-ref>
+    <choice id="com.clburlison.python" visible="true" title="Python 2.7.13">
         <pkg-ref id="com.clburlison.python"/>
     </choice>
-    <pkg-ref id="com.clburlison.python" version="2.7.10" onConclusion="none">python-2.7.10.pkg</pkg-ref>
+    <pkg-ref id="com.clburlison.python" version="2.7.13" onConclusion="none">python-2.7.13.pkg</pkg-ref>
 </installer-gui-script>
