@@ -1,8 +1,8 @@
 """
-Setup script to compile OpenSSL for macOS
-Supported versions:
-  * 1.0.2
-  * 1.1.0
+Setup script to compile OpenSSL 1.0.2 for macOS
+NOTE: OpenSSL 1.1 is not supported at this time due to large API changes.
+      However OpenSSL version 1.0.2 is supported by the OpenSSL Software
+      Foundation until 2019-12-31 (LTS).
 """
 
 # standard libs
@@ -83,69 +83,99 @@ def download_and_extract_openssl():
     os.remove(temp_filename)
 
 
-def build(skip):
+def build():
     """This is the main processing step that builds openssl from source"""
-
     # Step 1: change into our build directory
     os.chdir(OPENSSL_BUILD_DIR)
     # Don't compile openssl if the skip option is passed
-    if not skip:
-        # Step 2: Run the Configure setup of OpenSSL to set correct paths
-        openssl_install = os.path.join(BASE_INSTALL_PATH, 'openssl')
-        log.info("Configuring OpenSSL...")
-        cmd = ['./Configure',
-               '--prefix={}'.format(openssl_install),
-               '--openssldir={}'.format(openssl_install),
-               'darwin64-x86_64-cc',
-               'shared',
-               'enable-ec_nistp_64_gcc_128',
-               'no-comp'
-               ]
-        # OpenSSL 1.0 to 1.1 has some pretty major build differences. Manage
-        # the build control with the following
-        OLD_VERSION = None
-        # OpenSSL renamed this build flag so was less confusing
-        # https://github.com/openssl/openssl/commit/3c65577f1af1109beb8de06420efa09188981628
-        TMP_DIR_FLAG = None
-        if OPENSSL_VERSION > "1.1.0":
-            OLD_VERSION = False
-            TMP_DIR_FLAG = "DESTDIR"
-        else:
-            OLD_VERSION = True
-            TMP_DIR_FLAG = "INSTALL_PREFIX"
-        # If running 1.0 use runner.system() else runner.Popen()
-        if OLD_VERSION:
-            out = runner.system(cmd)
-        else:
-            out = runner.Popen(cmd)
-        log.debug("Configuring returned value: {}".format(out))
+    # Step 2: Run the Configure setup of OpenSSL to set correct paths
+    openssl_install = os.path.join(BASE_INSTALL_PATH, 'openssl')
+    log.info("Configuring OpenSSL...")
+    cmd = ['./Configure',
+           '--prefix={}'.format(openssl_install),
+           '--openssldir={}'.format(openssl_install),
+           'darwin64-x86_64-cc',
+           'enable-ec_nistp_64_gcc_128',
+           'no-ssl2',
+           'no-ssl3',
+           'no-zlib',
+           'shared',
+           'enable-cms',
+           'no-comp',
+           ]
+    # OpenSSL 1.0 to 1.1 has some pretty major API and build differences.
+    # Manage the build control with the following. NOTE: 1.1 is not
+    # supported at this time. Hopefully in a future release.
+    OLD_VERSION = None
+    # OpenSSL renamed this build flag so was less confusing
+    # https://github.com/openssl/openssl/commit/3c65577f1af1109beb8de06420efa09188981628
+    TMP_DIR_FLAG = None
+    if OPENSSL_VERSION > "1.1.0":
+        OLD_VERSION = False
+        TMP_DIR_FLAG = "DESTDIR"
+    else:
+        OLD_VERSION = True
+        TMP_DIR_FLAG = "INSTALL_PREFIX"
+    # If running 1.0 use runner.system() else runner.Popen()
+    if OLD_VERSION:
+        out = runner.system(cmd)
+    else:
+        out = runner.Popen(cmd)
+    log.debug("Configuring returned value: {}".format(out))
 
-        # Step 3: compile openssl. this will take a while.
-        # FIXME: We need to check return codes.
-        #        This command is required for OpenSSL lower than 1.1.0
-        if OLD_VERSION:
-            log.detail("Running OpenSSL make depend routine...")
-            cmd = ['/usr/bin/make', 'depend']
-            proc = subprocess.Popen(cmd, bufsize=-1, stdout=sys.stdout)
-            (output, dummy_error) = proc.communicate()
-            sys.stdout.flush()  # does this help?
-
-        log.info("Compiling OpenSSL. This will take a while time...")
-        log.detail("Running OpenSSL make routine...")
-        cmd = ['/usr/bin/make']
+    # Step 3: compile openssl. this will take a while.
+    # FIXME: We need to check return codes.
+    #        This command is required for OpenSSL lower than 1.1
+    log.info("Compiling OpenSSL. This will take a while time...")
+    if OLD_VERSION:
+        log.detail("Running OpenSSL make depend routine...")
+        cmd = ['/usr/bin/make', 'depend']
         proc = subprocess.Popen(cmd, bufsize=-1, stdout=sys.stdout)
         (output, dummy_error) = proc.communicate()
         sys.stdout.flush()  # does this help?
 
-        log.detail("Running OpenSSL make install routine...")
-        cmd = ['/usr/bin/make',
-               '{}={}'.format(TMP_DIR_FLAG, PKG_PAYLOAD_DIR),
-               'install']
-        print("ran a command: {}".format(' '.join(cmd)))
-        out = runner.Popen(cmd, stdout=sys.stdout)
-        sys.stdout.flush()  # does this help?
-    else:
-        log.info("OpenSSL compile skipped due to -skip option")
+    log.detail("Running OpenSSL make routine...")
+    cmd = ['/usr/bin/make']
+    proc = subprocess.Popen(cmd, bufsize=-1, stdout=sys.stdout)
+    (output, dummy_error) = proc.communicate()
+    sys.stdout.flush()  # does this help?
+
+    # log.detail("Running OpenSSL make test routine...")
+    # cmd = ['/usr/bin/make', 'test']
+    # proc = subprocess.Popen(cmd, bufsize=-1, stdout=sys.stdout)
+    # (output, dummy_error) = proc.communicate()
+    # sys.stdout.flush()  # does this help?
+
+    mkpath(PKG_PAYLOAD_DIR)
+    log.detail("Running OpenSSL make install routine...")
+    cmd = ['/usr/bin/make',
+           '{}={}'.format(TMP_DIR_FLAG, PKG_PAYLOAD_DIR),
+           'install']
+    print("ran a command: {}".format(' '.join(cmd)))
+    out = runner.Popen(cmd, stdout=sys.stdout)
+    sys.stdout.flush()  # does this help?
+
+
+def post_install():
+    """
+    This helps work around a limitation with bundling your own version of
+    OpenSSL. We copy the certs from Apple's 'SystemRootCertificates.keychain'
+    into OPENSSL_BUILD_DIR/cert.pem
+    https://goo.gl/s6vvwl
+    """
+    log.info("Writing the 'cert.pem' file from Apple's System Root Certs...")
+    cmd = ['/usr/bin/security', 'find-certificate', '-a', '-p',
+           '/System/Library/Keychains/SystemRootCertificates.keychain']
+    out = runner.Popen(cmd)
+    # Take the command output, out[0], and write the file to cert.pem
+    cert_path = os.path.join(PKG_PAYLOAD_DIR, BASE_INSTALL_PATH_S,
+                             'openssl', 'cert.pem')
+    try:
+        f = open(cert_path, "w")
+        f.write(out[0])
+        f.close()
+    except(IOError) as e:
+        log.error("Unable to write 'cert.pem': {}".format(e))
 
 
 def main():
@@ -154,7 +184,7 @@ def main():
                                      description='This script will compile '
                                      'OpenSSL 1.0.1+ and optionally create '
                                      'a native macOS package.')
-    parser.add_argument('-b', '--build', action='store_true', required=True,
+    parser.add_argument('-b', '--build', action='store_true',
                         help='Compile the OpenSSL binary')
     parser.add_argument('-s', '--skip', action='store_true',
                         help='Skip recompiling if possible. Only recommended '
@@ -183,10 +213,8 @@ def main():
                       "on this run.")
         else:
             download_and_extract_openssl()
-            # reset trigger flag as we needed to download openssl
-            skip = False
-
-        build(skip=skip)
+            build()
+            post_install()
 
     if args.pkg:
         log.info("Building a package for OpenSSL...")
