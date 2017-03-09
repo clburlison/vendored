@@ -99,9 +99,9 @@ def patch():
         log.debug("Creating _patch directory...")
         mkpath(patch_dir)
     patch_pairs = [
-                   ['_patch/_tlsssl.c',           '_src/_ssl.c', ],
-                   ['_patch/make_tlsssl_data.py', '_src/make_ssl_data.py'],
-                   ['_patch/tlsssl.py',          '_src/ssl.py'],
+                   # ['_patch/_ssl.c',           '_src/_ssl.c', ],
+                   ['_patch/make_ssl_data.py', '_src/make_ssl_data.py'],
+                   # ['_patch/ssl.py',          '_src/ssl.py'],
                   ]
     log.detail("Create our patch files if they do not exist...")
     for dest, source in patch_pairs:
@@ -122,6 +122,16 @@ def patch():
         source = os.path.join(CURRENT_DIR, "_src", "socketmodule.h")
         shutil.copy(source, os.path.realpath(os.path.join(patch_dir)))
 
+    if not os.path.isfile(os.path.join(patch_dir, "_ssl.c")):
+        log.debug("Copying '_ssl.c' to the _patch dir")
+        source = os.path.join(CURRENT_DIR, "_src", "_ssl.c")
+        shutil.copy(source, os.path.realpath(os.path.join(patch_dir)))
+
+    if not os.path.isfile(os.path.join(patch_dir, "ssl.py")):
+        log.debug("Copying 'ssl.py' to the _patch dir")
+        source = os.path.join(CURRENT_DIR, "_src", "ssl.py")
+        shutil.copy(source, os.path.realpath(os.path.join(patch_dir)))
+
     log.detail("All patch files are created...")
 
 
@@ -133,7 +143,7 @@ def build():
     ssl_data = os.path.join(patch_dir, "_ssl_data.h")
     if not os.path.isfile(ssl_data):
         log.debug("Generate _ssl_data.h header...")
-        tool_path = os.path.join(CURRENT_DIR, "_patch", "make_tlsssl_data.py")
+        tool_path = os.path.join(CURRENT_DIR, "_patch", "make_ssl_data.py")
         # Run the generating script
         cmd = ['/usr/bin/python', tool_path, HEADER_SRC, ssl_data]
         out = runner.Popen(cmd)
@@ -145,9 +155,9 @@ def build():
         shutil.rmtree(build_dir, ignore_errors=True)
     log.debug("Creating build directories...")
     mkpath(build_dir)
-    # Step 3.5: copy tlsssl.py to the build directory
-    log.info("Copy 'tlsssl.py' to the build directory...")
-    shutil.copy(os.path.join(CURRENT_DIR, '_patch/tlsssl.py'), build_dir)
+    # Step 3.5: copy ssl.py to the build directory
+    log.info("Copy 'ssl.py' to the build directory...")
+    shutil.copy(os.path.join(CURRENT_DIR, '_patch/ssl.py'), build_dir)
     workspace_rel = os.path.join(build_dir)
     workspace_abs = os.path.realpath(workspace_rel)
     # Step 4: copy and rename the dylibs to there
@@ -220,25 +230,25 @@ def build():
            "-DENABLE_DTRACE", "-arch", "x86_64", "-arch", "i386", "-pipe",
            "-I{}".format(HEADER_SRC),
            "-I{}".format(system_python_path),
-           "-c", "_patch/_tlsssl.c", "-o", "build/_tlsssl.o"]
+           "-c", "_patch/_ssl.c", "-o", "build/_ssl.o"]
     out = runner.Popen(cmd)
     if out[2] == 0:
-        log.debug("Build of '_tlsssl.o' completed sucessfully")
+        log.debug("Build of '_ssl.o' completed sucessfully")
     else:
         log.error("Build has failed: {}".format(out[1]))
 
     cmd = ["cc", "-bundle", "-undefined", "dynamic_lookup", "-arch",
-           "x86_64", "-arch", "i386", "-Wl,-F.", "build/_tlsssl.o",
+           "x86_64", "-arch", "i386", "-Wl,-F.", "build/_ssl.o",
            "-L{}".format(workspace_abs), "-ltlsssl", "-ltlsssl", "-o",
-           "build/_tlsssl.so"]
+           "build/_ssl.so"]
     out = runner.Popen(cmd)
     if out[2] == 0:
-        log.debug("Build of '_tlsssl.so' completed sucessfully")
+        log.debug("Build of '_ssl.so' completed sucessfully")
     else:
         log.error("Build has failed: {}".format(out[1]))
 
-    log.debug("Remove temp '_tlsssl.o' from build directory")
-    os.remove(os.path.join(build_dir, "_tlsssl.o"))
+    log.debug("Remove temp '_ssl.o' from build directory")
+    os.remove(os.path.join(build_dir, "_ssl.o"))
 
 
 def main():
@@ -282,12 +292,13 @@ def main():
         payload_root_dir = os.path.join(
             payload_dir, CONFIG['tlsssl_install_dir'].lstrip('/'))
         mkpath(payload_lib_dir)
-        log.detail("Changing file permissions for 'tlsssl.py'...")
-        # tlsssl.py needs to have chmod 644 so non-root users can import this
-        os.chmod('build/tlsssl.py', stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IROTH)
+        log.detail("Changing file permissions for 'ssl.py'...")
+        # ssl.py needs to have chmod 644 so non-root users can import this
+        os.chmod('build/ssl.py', stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP |
+                 stat.S_IROTH)
         log.detail("Copying build files into payload directory")
-        shutil.copy('build/_tlsssl.so', payload_root_dir)
-        shutil.copy('build/tlsssl.py', payload_root_dir)
+        shutil.copy('build/_ssl.so', payload_root_dir)
+        shutil.copy('build/ssl.py', payload_root_dir)
         shutil.copy('build/libtlscrypto.dylib', payload_lib_dir)
         shutil.copy('build/libtlsssl.dylib', payload_lib_dir)
 
@@ -302,7 +313,12 @@ def main():
             mkpath(python_sys_local)
             pth_file = os.path.join(python_sys_local, pth_fname)
             f = open(pth_file, 'w')
-            f.write(os.path.dirname(LIBS_DEST))
+            # this hacky method will force this path to have a high priority
+            # http://stackoverflow.com/a/37380306
+            content = """import sys; sys.__plen = len(sys.path)
+{}
+import sys; new=sys.path[sys.__plen:]; del sys.path[sys.__plen:]; p=getattr(sys,'__egginsert',0); sys.path[p:p]=new; sys.__egginsert = p+len(new)""".format(os.path.dirname(LIBS_DEST))
+            f.write(content)
             f.close()
 
         rc = package.pkg(root='payload',
