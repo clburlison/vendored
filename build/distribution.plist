@@ -2,9 +2,7 @@
 <installer-gui-script minSpecVersion="1">
     <title>Vendored - Tools for work</title>
     <organization>com.clburlison.vendored</organization>
-    <!-- Define background image -->
     <background file="logo.png" mime-type="image/png" scaling="proportional" />
-    <!-- Define documents displayed at various steps -->
     <welcome file="welcome.rtf" mime-type="text/rtf" />
     <!-- FIXME: I need to verify this later. -->
     <volume-check>
@@ -12,23 +10,26 @@
           <os-version min="10.7"/>
       </allowed-os-versions>
     </volume-check>
-    <!-- List all component packages -->
     <pkg-ref id="com.clburlison.openssl"/>
     <pkg-ref id="com.clburlison.python"/>
+    <pkg-ref id="com.clburlison.tlsssl"/>
     <options customize="allow" require-scripts="false"/>
     <choices-outline>
-      <line choice="com.clburlison.openssl"/>
-      <line choice="com.clburlison.python"/>
+          <line choice="com.clburlison.openssl"/>
+          <line choice="com.clburlison.python"/>
+          <line choice="com.clburlison.tlsssl"/>
     </choices-outline>
     <choice id="default"/>
-    <!-- OpenSSL really needs to be installed. It is a dependency for others. Maybe just add it in the description.
-     or I could change the visbility to false. -->
-    <choice id="com.clburlison.openssl" visible="true" selected="true" title="OpenSSL 1.1.0e">
+    <choice id="com.clburlison.openssl" visible="true" selected="true" title="OpenSSL 1.0.2k">
         <pkg-ref id="com.clburlison.openssl"/>
     </choice>
-    <pkg-ref id="com.clburlison.openssl" version="1.1.0e" onConclusion="none">openssl-1.1.0e.pkg</pkg-ref>
-    <choice id="com.clburlison.python" visible="true" title="Python 2.7.13">
+    <pkg-ref id="com.clburlison.openssl" version="1.0.2k" onConclusion="none">openssl-1.0.2k.pkg</pkg-ref>
+    <choice id="com.clburlison.python" visible="true" start_selected="false" title="Python 2.7.13">
         <pkg-ref id="com.clburlison.python"/>
     </choice>
     <pkg-ref id="com.clburlison.python" version="2.7.13" onConclusion="none">python-2.7.13.pkg</pkg-ref>
+    <choice id="com.clburlison.tlsssl" visible="true" title="tlsssl module">
+        <pkg-ref id="com.clburlison.tlsssl"/>
+    </choice>
+    <pkg-ref id="com.clburlison.tlsssl" version="1.0.0" onConclusion="none">tlsssl-1.0.0.pkg</pkg-ref>
 </installer-gui-script>

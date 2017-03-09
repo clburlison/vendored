@@ -1,12 +1,8 @@
 #!/bin/bash
-# https://developer.apple.com/library/content/documentation/DeveloperTools/Reference/DistributionDefinitionRef/Chapters/Distribution_XML_Ref.html
-# https://github.com/rust-lang/rust-packaging/blob/master/pkg/Distribution.xml
-# https://github.com/saltstack/salt/tree/develop/pkg/osx
-
-
 # /usr/bin/productbuild --synthesize \
-# --package ./openssl-1.0.2j.pkg \
-# --package ./python-2.7.10.pkg \
+# --package ../openssl/openssl-1.0.2k.pkg \
+# --package ../python/python-2.7.13.pkg \
+# --package ../tlsssl/tlsssl-1.0.0.pkg \
 # distribution.plist
 
 
