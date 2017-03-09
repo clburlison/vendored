@@ -232,7 +232,6 @@ def build(skip):
         sys.stdout.flush()  # does this help?
 
         log.debug("Create some temp files thats")
-        mkpath("/tmp/build-python/payload/Library/ITOps/Python/2.7/bin")
         log.detail("Running Python make install routine...")
         cmd = ['/usr/bin/make', 'install']
         out = runner.Popen(cmd, stdout=sys.stdout)
@@ -260,7 +259,7 @@ def main():
                                      description='This script will compile '
                                      'Python 1.0.1+ and optionally create '
                                      'a native macOS package.')
-    parser.add_argument('-b', '--build', action='store_true', required=True,
+    parser.add_argument('-b', '--build', action='store_true',
                         help='Compile the Python binary')
     parser.add_argument('-s', '--skip', action='store_true',
                         help='Skip recompiling if possible. Only recommended '
