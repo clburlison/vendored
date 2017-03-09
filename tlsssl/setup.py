@@ -1,16 +1,14 @@
 """
-Setup script to compile tlsssl to run againt python 2.7 or higher.
-Has a dependency on openssl package being installed on this local machine
+Setup script to compile tlsssl to run againt python 2.7.
+Has a dependency on openssl package being installed on this local machine.
 """
 
 # standard libs
 from distutils.dir_util import mkpath
 from distutils.dir_util import copy_tree
 import os
-import os.path
 import urllib2
 import shutil
-import subprocess
 import sys
 import stat
 import re
@@ -28,12 +26,14 @@ from vendir import config  # noqa
 from vendir import hash_helper  # noqa
 from vendir import log  # noqa
 from vendir import package  # noqa
+from vendir import runner  # noqa
+
 
 CONFIG = config.ConfigSectionMap()
 # where an OpenSSL 1.0.1+ libssl.dylib and libcrypto.dylib are now
 LIBS_SRC = os.path.join(CONFIG['base_install_path'], 'openssl/lib')
 # where you'll want them eventually installed
-LIBS_DEST = CONFIG['tlsssl_install_dir']
+LIBS_DEST = os.path.join(CONFIG['tlsssl_install_dir'], 'lib')
 # where the associated headers are
 HEADER_SRC = os.path.join(CONFIG['base_install_path'], 'openssl/include')
 
@@ -47,20 +47,17 @@ def download_python_source_files():
         log.debug("Creating _src directory...")
         mkpath(src_dir)
     os.chdir(src_dir)
-    gh_url = (
-              'https://raw.githubusercontent.com/python/cpython/{}/'.format(
-               CONFIG['cpython_2_7_git_commit'])
-             )
+    gh_url = 'https://raw.githubusercontent.com/python/cpython/v2.7.10/'
     # This ugly looking block of code is a pair that matches the filename,
     # github url, and sha256 hash for each required python source file
     fp = [
-          ['ssl.py', '{}Lib/ssl.py'.format(gh_url), CONFIG['ssl_py_hash']],
-          ['_ssl.c', '{}Modules/_ssl.c'.format(gh_url), CONFIG['ssl_c_hash']],
-          ['make_ssl_data.py', '{}Tools/ssl/make_ssl_data.py'.format(gh_url),
-           CONFIG['make_ssl_data_py_hash']],
-          ['socketmodule.h',   '{}Modules/socketmodule.h'.format(gh_url),
-           CONFIG['socketmodule_h_hash']],
-         ]
+      ['ssl.py', '{}Lib/ssl.py'.format(gh_url), CONFIG['ssl_py_hash']],
+      ['_ssl.c', '{}Modules/_ssl.c'.format(gh_url), CONFIG['ssl_c_hash']],
+      ['make_ssl_data.py', '{}Tools/ssl/make_ssl_data.py'.format(gh_url),
+       CONFIG['make_ssl_data_py_hash']],
+      ['socketmodule.h',   '{}Modules/socketmodule.h'.format(gh_url),
+       CONFIG['socketmodule_h_hash']],
+    ]
     # Verify we have the correct python source files else download it
     log.detail("Downloading & checking hash of python source files...")
     for fname, url, sha256 in fp:
@@ -79,8 +76,8 @@ def download_python_source_files():
                 # Verify the hash of the source file we just downloaded
                 download_file_hash = hash_helper.getsha256hash(fname)
                 if download_file_hash != sha256:
-                    log.warn("The file hash for '{}' does not match the "
-                             "expected hash. It's hash is '{}'".format(
+                    log.warn("The hash for '{}' does not match the expected "
+                             "hash. The downloaded hash is '{}'".format(
                               fname, download_file_hash))
                 else:
                     log.debug("The download file '{}' matches our expected "
@@ -116,18 +113,16 @@ def patch():
             dest = os.path.join(CURRENT_DIR, dest)
             log.debug("Patching '{}'".format(dest))
             # TODO: Validate the return code and exist if something didn't work
-            _ = subprocess.check_output(['/usr/bin/patch',
-                                         source,
-                                         diff,
-                                         "-o",
-                                         dest])
+            cmd = ['/usr/bin/patch', source, diff, "-o", dest]
+            out = runner.Popen(cmd)
+            runner.pprint(out)
     # Copy over the socketmodule.h file as well
     if not os.path.isfile(os.path.join(patch_dir, "socketmodule.h")):
         log.debug("Copying 'socketmodule.h' to the _patch dir")
         source = os.path.join(CURRENT_DIR, "_src", "socketmodule.h")
         shutil.copy(source, os.path.realpath(os.path.join(patch_dir)))
 
-    log.detail("All patch files have been created or exist...")
+    log.detail("All patch files are created...")
 
 
 def build():
@@ -140,10 +135,9 @@ def build():
         log.debug("Generate _ssl_data.h header...")
         tool_path = os.path.join(CURRENT_DIR, "_patch", "make_tlsssl_data.py")
         # Run the generating script
-        _ = subprocess.check_output(['/usr/bin/python',
-                                    tool_path,
-                                    HEADER_SRC,
-                                    ssl_data])
+        cmd = ['/usr/bin/python', tool_path, HEADER_SRC, ssl_data]
+        out = runner.Popen(cmd)
+        runner.pprint(out, 'debug')
     # Step 3: remove the temporary work directory under the build dir
     build_dir = os.path.join(CURRENT_DIR, 'build')
     if os.path.exists(build_dir):
@@ -181,28 +175,31 @@ def build():
     os.chmod(ssl_tmp, st.st_mode | stat.S_IWUSR)
     st = os.stat(crypt_tmp)
     os.chmod(crypt_tmp, st.st_mode | stat.S_IWUSR)
-    _ = subprocess.check_output(['/usr/bin/install_name_tool',
-                                 '-id',
-                                 ssl_dest,
-                                 ssl_tmp])
-    _ = subprocess.check_output(['/usr/bin/install_name_tool',
-                                 '-id',
-                                 crypt_dest,
-                                 crypt_tmp])
+
+    cmd = ['/usr/bin/install_name_tool', '-id', ssl_dest, ssl_tmp]
+    out = runner.Popen(cmd)
+    runner.pprint(out, 'debug')
+
+    cmd = ['/usr/bin/install_name_tool', '-id', crypt_dest, crypt_tmp]
+    out = runner.Popen(cmd)
+    runner.pprint(out, 'debug')
+
     # Step 6: change the link between ssl and crypto
     # This part is a bit trickier - we need to take the existing entry
     # for libcrypto on libssl and remap it to the new location
-    link_output = subprocess.check_output(['/usr/bin/otool',
-                                           '-L',
-                                           ssl_tmp])
+    cmd = ['/usr/bin/otool', '-L', ssl_tmp]
+    out = runner.Popen(cmd)
+    runner.pprint(out, 'debug')
+
     old_path = re.findall('^\t(/[^\(]+?libcrypto.*?.dylib)',
-                          link_output,
+                          out[0],
                           re.MULTILINE)[0]
-    _ = subprocess.check_output(['/usr/bin/install_name_tool',
-                                 '-change',
-                                 old_path,
-                                 crypt_dest,
-                                 ssl_tmp])
+    log.debug("The old path was: {}".format(old_path))
+
+    cmd = ['/usr/bin/install_name_tool', '-change', old_path, crypt_dest,
+           ssl_tmp]
+    out = runner.Popen(cmd)
+    runner.pprint(out, 'debug')
     # Step 7: cleanup permissions
     # NOTE: Same. I don't think this I needed any longer
     st = os.stat(ssl_tmp)
@@ -224,27 +221,21 @@ def build():
            "-I{}".format(HEADER_SRC),
            "-I{}".format(system_python_path),
            "-c", "_patch/_tlsssl.c", "-o", "build/_tlsssl.o"]
-    proc = subprocess.Popen(cmd, shell=False, bufsize=-1,
-                            stdin=subprocess.PIPE,
-                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    (output, dummy_error) = proc.communicate()
-    if proc.returncode == 0:
+    out = runner.Popen(cmd)
+    if out[2] == 0:
         log.debug("Build of '_tlsssl.o' completed sucessfully")
     else:
-        log.error("Build has failed: {}".format(dummy_error))
+        log.error("Build has failed: {}".format(out[1]))
 
     cmd = ["cc", "-bundle", "-undefined", "dynamic_lookup", "-arch",
            "x86_64", "-arch", "i386", "-Wl,-F.", "build/_tlsssl.o",
            "-L{}".format(workspace_abs), "-ltlsssl", "-ltlsssl", "-o",
            "build/_tlsssl.so"]
-    proc = subprocess.Popen(cmd, shell=False, bufsize=-1,
-                            stdin=subprocess.PIPE,
-                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    (output, dummy_error) = proc.communicate()
-    if proc.returncode == 0:
+    out = runner.Popen(cmd)
+    if out[2] == 0:
         log.debug("Build of '_tlsssl.so' completed sucessfully")
     else:
-        log.error("Build has failed: {}".format(dummy_error))
+        log.error("Build has failed: {}".format(out[1]))
 
     log.debug("Remove temp '_tlsssl.o' from build directory")
     os.remove(os.path.join(build_dir, "_tlsssl.o"))
@@ -256,7 +247,7 @@ def main():
                                      description='This script will compile '
                                      'tlsssl and optionally create '
                                      'a native macOS package.')
-    parser.add_argument('-b', '--build', action='store_true', required=True,
+    parser.add_argument('-b', '--build', action='store_true',
                         help='Compile the tlsssl binaries')
     parser.add_argument('-p', '--pkg', action='store_true',
                         help='Package the tlsssl output directory.')
@@ -272,6 +263,7 @@ def main():
     log.verbose = args.verbose
 
     if args.build:
+        log.info("Bulding tslssl...")
         download_python_source_files()
         patch()
         build()
@@ -286,20 +278,22 @@ def main():
             log.debug("Removing payload directory...")
             shutil.rmtree(payload_dir, ignore_errors=True)
         log.debug("Creating payload directory...")
-        payload_tmp_dir = os.path.join(payload_dir, LIBS_DEST.lstrip('/'))
-        mkpath(payload_tmp_dir)
-
+        payload_lib_dir = os.path.join(payload_dir, LIBS_DEST.lstrip('/'))
+        payload_root_dir = os.path.join(
+            payload_dir, CONFIG['tlsssl_install_dir'].lstrip('/'))
+        mkpath(payload_lib_dir)
+        log.detail("Changing file permissions for 'tlsssl.py'...")
+        # tlsssl.py needs to have chmod 644 so non-root users can import this
+        os.chmod('build/tlsssl.py', stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IROTH)
         log.detail("Copying build files into payload directory")
-        copy_tree('build', str(payload_tmp_dir))
-        log.debug("Write __init__.py file so python sees tlsssl as a module")
-        f = open(os.path.join(payload_tmp_dir, '__init__.py'), 'w')
-        f.write("# this is needed to make Python recognize the "
-                "directory as a module package")
-        f.close()
+        shutil.copy('build/_tlsssl.so', payload_root_dir)
+        shutil.copy('build/tlsssl.py', payload_root_dir)
+        shutil.copy('build/libtlscrypto.dylib', payload_lib_dir)
+        shutil.copy('build/libtlsssl.dylib', payload_lib_dir)
 
         pth_fname = CONFIG['pth_fname']
         # if the pth_fname key is set write the .pth file
-        if pth_fname is not None or pth_fname is not '':
+        if pth_fname is not '':
             log.debug("Write the '.pth' file so native python can read "
                       "this module without a sys.path.insert")
             python_sys = "/Library/Python/2.7/site-packages/"
@@ -313,6 +307,7 @@ def main():
 
         rc = package.pkg(root='payload',
                          version=version,
+                         identifier="{}.tlsssl".format(CONFIG['pkgid']),
                          output='tlsssl-{}.pkg'.format(version),
                          )
         if rc == 0:
