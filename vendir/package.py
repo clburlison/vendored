@@ -16,7 +16,7 @@ def pkg(root,
         output,
         identifier=CONFIG['pkgid'],
         install_location='/',
-        signing=CONFIG['pb_extra_args'],
+        sign=CONFIG['sign_cert_cn'],
         ownership='recommended'
         ):
     """
@@ -30,12 +30,15 @@ def pkg(root,
     cmd = ['/usr/bin/pkgbuild', '--root', root,
            '--install-location', install_location,
            '--identifier', identifier,
-           signing,
            '--version', version,
-           '--ownership', ownership,
-           output]
-    # In case we aren't signing the page remove the empty element
-    cmd.remove('')
+           '--ownership', ownership]
+    # When sign_cert_cn are passed we should sign the package
+    if sign:
+        cmd.append('--sign')
+        cmd.append(sign)
+    # Always append the output path so signing will work
+    cmd.append(output)
+    print(cmd)
     proc = subprocess.Popen(cmd, shell=False, bufsize=-1,
                             stdin=subprocess.PIPE,
                             stdout=sys.stdout, stderr=subprocess.PIPE)
