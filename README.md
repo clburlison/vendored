@@ -28,7 +28,7 @@ A sample is shown below:
 
     base_install_path: /Library/CPE
     pkgid: com.clburlison
-    pb_extra_args: --sign Developer ID Installer: Clayton Burlison
+    sign_cert_cn: Developer ID Installer: Clayton Burlison
 
 ## Creating a patch
 Some of these tools require patch files for compiling. If you're unfamiliar with creating a patch file the basics look a little something like:
