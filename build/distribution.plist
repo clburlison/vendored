@@ -32,4 +32,5 @@
         <pkg-ref id="com.clburlison.tlsssl"/>
     </choice>
     <pkg-ref id="com.clburlison.tlsssl" version="1.0.0" onConclusion="none">tlsssl-1.0.0.pkg</pkg-ref>
+    <pkg-ref id="com.clburlison.tlsssl" version="1.0.0" onConclusion="none">tlsssl-1.1.0.pkg</pkg-ref>
 </installer-gui-script>
