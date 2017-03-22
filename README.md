@@ -1,6 +1,3 @@
-vendored
-===
-
 **THIS IS A WORK IN PROGRESS**
 
 ![vendored](img/vendored.png)
