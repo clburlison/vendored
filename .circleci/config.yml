@@ -1,0 +1,9 @@
+version: 2
+jobs:
+  build:
+    working_directory: /tmp
+    docker:
+      - image: clburlison/pycodestyle:latest
+    steps:
+      - checkout
+      - run: pycodestyle --exclude=_src,_patch,payload,build .
