@@ -1,11 +1,13 @@
-Vendored
+vendored
 ===
 
 **THIS IS A WORK IN PROGRESS**
 
+![vendored](img/vendored.png)
+
 The goal of this repo is to make it easy to "vendor" your own frameworks and programming languages in an automated fashion.
 
-Once this project is complete you will be able to have own version of python, ruby, pyojbc bridge, openssl, and more all in one nice big package or multiple smaller packages for easy deployment.
+Once this project is complete you will be able to have own version of python, ruby, pyojbc bridge, OpenSSL, and more all in one nice big package or multiple smaller packages for easy deployment.
 
 To keep track of progress look at the [Master list](https://github.com/clburlison/vendored/issues/1)
 
@@ -15,14 +17,14 @@ Currently parts of this project are working. You can run `./build.py` to build a
 
 ### Requires:
 * Apple Command Line Tools (installable with `xcode-select --install`)
-* Python 2.7. Not compatible with Python3 at this time.
+* Python 2
 
 ### Override
-Vendored was created to be customizable. As such, it is possbile to override almost every option. These overrides live in the `config.ini` file.
+vendored was created to be customizable. As such, it is possible to override almost every option. These overrides live in the `config.ini` file.
 
 The `config.ini` file contains two sections:
-* `[DEFAULT]` which contains the default values and
-* `[override]` which will override values from the default section.
+* `[DEFAULT]` which contains the default values
+* `[override]` which will override values from the default section
 
 A sample is shown below:
 
@@ -38,9 +40,9 @@ diff -u hello.c hello_new.c > hello.c.patch
 ```
 
 ## Credits
-Many thanks to...
-* the [Google MacOps](https://github.com/google/macops/) team for open sourcing their solution.
-* [@pudquick](https://github.com/pudquick) for his work on tlsssl so we can patch the native Python 2.7 that comes on macOS.
+Huge thanks to...
+* the [Google MacOps](https://github.com/google/macops/) team for open sourcing their solution
+* [@pudquick](https://github.com/pudquick) for his work on tlsssl so we can patch the native Python 2.7 that ships on macOS
 
 This project uses works from:
 
@@ -49,7 +51,7 @@ This project uses works from:
 [@pudquick](https://github.com/pudquick) | [pudquick/tlsssl](https://github.com/pudquick/tlsssl)
 [Munki](https://github.com/munki) | [munkilib](https://github.com/munki/munki/blob/master/code/client/munkilib/)
 [Google Inc.](https://github.com/google/macops) | [google/macops packages](https://github.com/google/macops/tree/master/packages)
-[designContest](http://www.designcontest.com) | [Shopping bag icon](http://www.iconarchive.com/show/ecommerce-business-icons-by-designcontest/shopping-bag-icon.html)
+[EmojiOne](http://emojione.com/) | [briefcase](https://github.com/Ranks/emojione/blob/master/assets/png_512x512/1f4bc.png?raw=true)
 
 ## License
 
