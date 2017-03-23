@@ -10,7 +10,7 @@ Once this project is complete you will be able to have own version of python, ru
 
 To keep track of progress look at the [Master list](https://github.com/clburlison/vendored/issues/1)
 
-## Usage
+# Usage
 
 Currently parts of this project are working. You can run `./build.py` to build and optionally package some of these pieces. Or `cd` into one of the subfolders and run `python setup.py` directly (the help is quite 'helpful'). This will give you the most control at this point until the build script matures and has more arguments added.
 
@@ -38,7 +38,39 @@ Some of these tools require patch files for compiling. If you're unfamiliar with
 diff -u hello.c hello_new.c > hello.c.patch
 ```
 
-## Credits
+# Working with the CI
+CircleCI is set to run tests on this repo. Coding should follow the [PEP 8](https://www.python.org/dev/peps/pep-0008/) style guide and is verified with [`flake8`](https://pypi.python.org/pypi/flake8). While correct spellings for code is verified with enchant using the python-enchant module.
+
+To run the CI tests locally the following tools must be installed:
+
+* [Docker for Mac](https://docs.docker.com/docker-for-mac/install/).
+* [circleci binary](https://circleci.com/docs/2.0/local-jobs/#installation) via
+    ```bash
+    curl -o /usr/local/bin/circleci https://circle-downloads.s3.amazonaws.com/releases/build_agent_wrapper/circleci && chmod +x /usr/local/bin/circleci
+    ```
+
+To run the test suite:
+
+```bash
+circleci build
+```
+
+## Updating 'words' dictionary
+As with all projects some words that are used will not be part of the standard 'en_US' dictionary and are added to a custom file located in `tests/words`.
+
+To check spelling locally:
+
+```bash
+circleci build --job spell-check
+```
+
+To add new words to the 'words' file (please run `spell-check` first):
+
+```bash
+circleci build --job add-unknown-words
+```
+
+# Credits
 Huge thanks to...
 * the [Google MacOps](https://github.com/google/macops/) team for open sourcing their solution
 * [@pudquick](https://github.com/pudquick) for his work on tlsssl so we can patch the native Python 2.7 that ships on macOS
@@ -51,7 +83,8 @@ This project uses works from:
 [Munki](https://github.com/munki) | [munkilib](https://github.com/munki/munki/blob/master/code/client/munkilib/)
 [Google Inc.](https://github.com/google/macops) | [google/macops packages](https://github.com/google/macops/tree/master/packages)
 [EmojiOne](http://emojione.com/) | [briefcase](https://github.com/Ranks/emojione/blob/master/assets/png_512x512/1f4bc.png?raw=true)
+[Ignace Mouzannar](http://ghantoos.org/)  | [CI python spell checks post](http://ghantoos.org/2016/02/21/continuous-integration-python-comments-spellchecks-with-pylint-pyenchant-and-tox/)
 
-## License
+# License
 
 This project uses the MIT License.
