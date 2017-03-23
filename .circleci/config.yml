@@ -6,4 +6,13 @@ jobs:
       - image: clburlison/pylint:py2-alpine
     steps:
       - checkout
-      - run: flake8 --exclude=_src,_patch,payload,build .
+      - run:
+          name: Run tests
+          command: |
+            set -x
+            # Only run lint tests if a python file changed
+            changed_files=$(git --no-pager diff --name-only origin/master HEAD)
+            if [[ "$changed_files" =~ .py ]]; then
+              echo "A python file was modified. Running python linter..."
+              flake8 --exclude=_src,_patch,payload,build .
+            fi
