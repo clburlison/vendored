@@ -2,6 +2,8 @@
 
 ![vendored](img/vendored.png)
 
+[![CircleCI](https://circleci.com/gh/clburlison/vendored.svg?style=svg)](https://circleci.com/gh/clburlison/vendored)
+
 The goal of this repo is to make it easy to "vendor" your own frameworks and programming languages in an automated fashion.
 
 Once this project is complete you will be able to have own version of python, ruby, pyojbc bridge, OpenSSL, and more all in one nice big package or multiple smaller packages for easy deployment.
