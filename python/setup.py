@@ -5,7 +5,6 @@ Setup script to compile Python for macOS, includes:
 
 # standard libs
 from distutils.dir_util import mkpath
-from distutils.version import LooseVersion
 import os
 import shutil
 import sys
@@ -161,35 +160,29 @@ def build(skip):
         # Step 1.8: Run a few patches so we can compile cleanly
         dl_apple_patch_files()
         log.debug("Patching files into source...")
-        cmd = ['/bin/ed', '-', os.path.join(PYTHON_BUILD_DIR, 'configure'), '<', os.path.join(SRC_DIR, 'configure.ed')]
+        cmd = ['/bin/ed', '-', os.path.join(
+            PYTHON_BUILD_DIR, 'configure'), '<',
+            os.path.join(SRC_DIR, 'configure.ed')]
         out = runner.Popen(cmd)
         runner.pprint(out)
 
-        cmd = ['/bin/ed', '-', os.path.join(PYTHON_BUILD_DIR, 'setup.py'), '<', os.path.join(SRC_DIR, 'setup.py.ed')]
+        cmd = ['/bin/ed', '-', os.path.join(
+            PYTHON_BUILD_DIR, 'setup.py'), '<',
+            os.path.join(SRC_DIR, 'setup.py.ed')]
         out = runner.Popen(cmd)
         runner.pprint(out)
 
-        cmd = ['/bin/ed', '-', os.path.join(PYTHON_BUILD_DIR, 'Modules/readline.c'), '<', os.path.join(SRC_DIR, 'readline.c.ed')]
+        cmd = ['/bin/ed', '-', os.path.join(
+            PYTHON_BUILD_DIR, 'Modules/readline.c'), '<',
+            os.path.join(SRC_DIR, 'readline.c.ed')]
         out = runner.Popen(cmd)
         runner.pprint(out)
 
-        cmd = ['/usr/bin/patch', os.path.join(PYTHON_BUILD_DIR, 'setup.py'), os.path.join(SRC_DIR, 'setup.py.patch')]
+        cmd = ['/usr/bin/patch', os.path.join(
+            PYTHON_BUILD_DIR, 'setup.py'),
+            os.path.join(SRC_DIR, 'setup.py.patch')]
         out = runner.Popen(cmd)
         runner.pprint(out)
-
-        # Patch 2.7 SSL module. These shouldn't be needed as we're building
-        # v2.7.13
-        # cmd = ['/usr/bin/patch', os.path.join(PYTHON_BUILD_DIR, 'Modules/_hashopenssl.c'), os.path.join(PATCH_DIR, '_hashopenssl.c.patch')]
-        # out = runner.Popen(cmd)
-        # runner.pprint(out)
-        #
-        # cmd = ['/usr/bin/patch', os.path.join(PYTHON_BUILD_DIR, 'Modules/_ssl.c'), os.path.join(PATCH_DIR, '_ssl.c.patch')]
-        # out = runner.Popen(cmd)
-        # runner.pprint(out)
-        #
-        # cmd = ['/usr/bin/patch', os.path.join(PYTHON_BUILD_DIR, 'Lib/ssl.py'), os.path.join(PATCH_DIR, 'ssl.py.patch')]
-        # out = runner.Popen(cmd)
-        # runner.pprint(out)
 
         # Step 2: Run the Configure setup of Python to set correct paths
         os.chdir(PYTHON_BUILD_DIR)

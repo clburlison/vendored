@@ -48,7 +48,7 @@ def Popen(cmd, shell=False, bufsize=-1,
     Runner for subprocess.Popen()
 
     Args:
-      these match the standard input srguments for subprocess.Popen
+      these match the standard input arguments for subprocess.Popen
 
     Returns tuple of of the run in the order of:
       (output, error, returncode)

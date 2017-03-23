@@ -4,11 +4,6 @@ build.py - main program for vendored
 """
 
 import os
-import sys
-import subprocess
-import argparse
-
-from vendir import config
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 

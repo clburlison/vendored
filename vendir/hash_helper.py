@@ -1,5 +1,5 @@
 """
-Functions for hasing a file. This has been completely lifted from
+Functions for hashing a file. This has been completely lifted from
 Munki3.munkilib.munkihash
 """
 
@@ -13,7 +13,7 @@ def gethash(filename, hash_function):
 
     Args:
       filename: The file name to calculate the hash value of.
-      hash_function: The hash function object to use, which was instanciated
+      hash_function: The hash function object to use, which was instantiated
           before calling this function, e.g. hashlib.md5().
 
     Returns:

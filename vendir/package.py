@@ -5,7 +5,6 @@ TODO: Better doc string message as I was getting lazy on this one
 
 import sys
 import subprocess
-import os
 
 from vendir import config
 CONFIG = config.ConfigSectionMap()
@@ -21,7 +20,7 @@ def pkg(root,
         ):
     """
     Function to create a package. Most of the input parameters should be
-    pretty reconizable for most admins. `output` is the path so make sure
+    recognizable for most admins. `output` is the path so make sure
     and attach the pkg extension.
 
     Return:

@@ -12,10 +12,10 @@ jobs:
           command: |
             set -x
             # Only run lint tests if a python file changed
-            changed_files="$(git --no-pager diff --name-only origin/master HEAD)"
+            changed_files="$(git --no-pager diff --name-only origin/master)"
             if [[ $changed_files =~ .py ]]; then
               echo "A python file was modified. Running python linter..."
-              flake8 --exclude=_src,_patch,payload,build .
+              flake8 --exclude=_src*,_patch*,payload,build .
             fi
       # This method is ugly and doesn't work well. Waiting for CircleCI to create a better method
       # - run:

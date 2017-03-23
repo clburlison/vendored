@@ -5,7 +5,6 @@ Has a dependency on openssl package being installed on this local machine.
 
 # standard libs
 from distutils.dir_util import mkpath
-from distutils.dir_util import copy_tree
 import os
 import urllib2
 import shutil
@@ -13,7 +12,6 @@ import sys
 import stat
 import re
 import inspect
-import tempfile
 import argparse
 
 # our libs. kind of hacky since this isn't a valid python package.
@@ -315,9 +313,13 @@ def main():
             f = open(pth_file, 'w')
             # this hacky method will force this path to have a high priority
             # http://stackoverflow.com/a/37380306
-            content = """import sys; sys.__plen = len(sys.path)
-{}
-import sys; new=sys.path[sys.__plen:]; del sys.path[sys.__plen:]; p=getattr(sys,'__egginsert',0); sys.path[p:p]=new; sys.__egginsert = p+len(new)""".format(os.path.dirname(LIBS_DEST))
+            content = ("""import sys; sys.__plen = len(sys.path)
+            {}
+            import sys; new=sys.path[sys.__plen:]; \
+            del sys.path[sys.__plen:]; \
+            p=getattr(sys,'__egginsert',0); \
+            sys.path[p:p]=new; sys.__egginsert = p+len(new)""".format(
+                os.path.dirname(LIBS_DEST)))
             f.write(content)
             f.close()
 

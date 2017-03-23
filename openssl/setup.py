@@ -7,7 +7,6 @@ NOTE: OpenSSL 1.1 is not supported at this time due to large API changes.
 
 # standard libs
 from distutils.dir_util import mkpath
-from distutils.version import LooseVersion
 import os
 import shutil
 import subprocess
@@ -79,7 +78,7 @@ def download_and_extract_openssl():
     if out[2] == 0:
         log.debug("Extraction completed sucessfully")
     else:
-        log.error("Extraction has failed: {}".format(dummy_error))
+        log.error("Extraction has failed: {}".format(out[1]))
     os.remove(temp_filename)
 
 

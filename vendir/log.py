@@ -14,6 +14,8 @@ Useage:
 import sys
 import warnings
 
+verbose = None
+
 
 def _to_unicode(obj, encoding='UTF-8'):
     """Coerces basestring obj to unicode"""
@@ -33,7 +35,7 @@ def _concat_message(msg, *args):
         args = [_to_unicode(arg) for arg in args]
         try:
             msg = msg % tuple(args)
-        except TypeError, dummy_err:
+        except TypeError:
             warnings.warn(
                 'String format does not match concat args: %s'
                 % (str(sys.exc_info())))
