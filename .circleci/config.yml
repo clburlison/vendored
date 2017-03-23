@@ -3,7 +3,7 @@ jobs:
   build:
     working_directory: /tmp/vendored
     docker:
-      - image: clburlison/pycodestyle:latest
+      - image: clburlison/pylint:py2-alpine
     steps:
       - checkout
-      - run: pycodestyle --exclude=_src,_patch,payload,build .
+      - run: flake8 --exclude=_src,_patch,payload,build .
