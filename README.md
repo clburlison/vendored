@@ -49,25 +49,27 @@ To run the CI tests locally the following tools must be installed:
     curl -o /usr/local/bin/circleci https://circle-downloads.s3.amazonaws.com/releases/build_agent_wrapper/circleci && chmod +x /usr/local/bin/circleci
     ```
 
-To run the test suite:
+To run the lint job:
 
 ```bash
-circleci build
+circleci build --job lint
 ```
 
-## Updating 'words' dictionary
+## Spelling CI
 As with all projects some words that are used will not be part of the standard 'en_US' dictionary and are added to a custom file located in `tests/words`.
 
-To check spelling locally:
+To run the spell-check job:
 
 ```bash
 circleci build --job spell-check
 ```
 
-To add new words to the 'words' file (please run `spell-check` first):
+To run the add-words job: 
+
+_Note:_ This will add new words to 'tests/words' so please run `spell-check` first
 
 ```bash
-circleci build --job add-unknown-words
+circleci build --job add-words
 ```
 
 # Credits

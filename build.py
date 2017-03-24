@@ -25,7 +25,7 @@ def build_python():
 
 
 def build_tlsssl():
-    """Build the tslssl project."""
+    """Build the tlsssl project."""
     tslssl_dir = os.path.join(CURRENT_DIR, 'tlsssl')
     os.chdir(tslssl_dir)
     cmd = ['/usr/bin/python', 'setup.py', '-vv', '-p', '-b']

@@ -23,3 +23,8 @@ os
 cmd
 returncode
 vv
+usr
+py
+vendored
+openssl
+tlsssl
