@@ -1,8 +1,8 @@
 #!/bin/bash
 # /usr/bin/productbuild --synthesize \
-# --package ../openssl/openssl-1.0.2k.pkg \
-# --package ../python/python-2.7.13.pkg \
-# --package ../tlsssl/tlsssl-1.0.0.pkg \
+# --package ../openssl/openssl-1.0.2n.pkg \
+# --package ../python/python-2.7.14.pkg \
+# --package ../tlsssl/tlsssl-1.1.0.pkg \
 # distribution.plist
 
 

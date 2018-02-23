@@ -19,18 +19,22 @@
           <line choice="com.clburlison.python"/>
           <line choice="com.clburlison.tlsssl"/>
     </choices-outline>
-    <choice id="default"/>
-    <choice id="com.clburlison.openssl" visible="true" selected="true" title="OpenSSL 1.0.2k">
+    <!-- START: OpenSSL -->
+    <pkg-ref id="com.clburlison.openssl" version="1.0.2n" onConclusion="none">openssl-1.0.2n.pkg</pkg-ref>
+    <choice id="com.clburlison.openssl" visible="true" start_selected="true" title="OpenSSL 1.0.2n">
         <pkg-ref id="com.clburlison.openssl"/>
     </choice>
-    <pkg-ref id="com.clburlison.openssl" version="1.0.2k" onConclusion="none">openssl-1.0.2k.pkg</pkg-ref>
-    <choice id="com.clburlison.python" visible="true" start_selected="false" title="Python 2.7.13">
+    <!-- END: OpenSSL -->
+    <!-- START: Python2 -->
+    <pkg-ref id="com.clburlison.python" version="2.7.14" onConclusion="none">python-2.7.14.pkg</pkg-ref>
+    <choice id="com.clburlison.python" visible="true" start_selected="true" title="Python 2.7.14">
         <pkg-ref id="com.clburlison.python"/>
     </choice>
-    <pkg-ref id="com.clburlison.python" version="2.7.13" onConclusion="none">python-2.7.13.pkg</pkg-ref>
-    <choice id="com.clburlison.tlsssl" visible="true" title="tlsssl module">
+    <!-- END: Python2 -->
+    <!-- START: tlsssl module -->
+    <pkg-ref id="com.clburlison.tlsssl" version="1.1.0" onConclusion="none">tlsssl-1.1.0.pkg</pkg-ref>
+    <choice id="com.clburlison.tlsssl" visible="true" start_selected="false" title="tlsssl module">
         <pkg-ref id="com.clburlison.tlsssl"/>
     </choice>
-    <pkg-ref id="com.clburlison.tlsssl" version="1.0.0" onConclusion="none">tlsssl-1.0.0.pkg</pkg-ref>
-    <pkg-ref id="com.clburlison.tlsssl" version="1.0.0" onConclusion="none">tlsssl-1.1.0.pkg</pkg-ref>
+    <!-- END: tlsssl module -->
 </installer-gui-script>

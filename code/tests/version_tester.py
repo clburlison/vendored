@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-This is a utility script designed to allow you to run either py2 or py3 via:
-    /some/path/to/python base_tester.py
-in order to verify TLS version. You want TLS 1.2 as the output.
+Utility to test TLS version.
+
+Designed to allow you to run either py2 or py3 via:
+    /some/path/to/python version_tester.py
+
+You want TLS 1.2 as the output.
 """
 
 # standard libs

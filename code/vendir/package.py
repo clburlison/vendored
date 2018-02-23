@@ -1,5 +1,6 @@
 """
 Functions for packaging.
+
 TODO: Better doc string message as I was getting lazy on this one
 """
 
@@ -19,9 +20,10 @@ def pkg(root,
         ownership='recommended'
         ):
     """
-    Function to create a package. Most of the input parameters should be
-    recognizable for most admins. `output` is the path so make sure
-    and attach the pkg extension.
+    Create a package.
+
+    Most of the input parameters should be recognizable for most admins.
+    `output` is the path so make sure and attach the pkg extension.
 
     Return:
       The exit code from pkgbuild. If non-zero an error has occurred

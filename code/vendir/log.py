@@ -1,5 +1,6 @@
 """
-Functions for logging
+Functions for logging.
+
 TODO: Update print statements to be py3 compatible
 Borrowed heavily from Munki3.munkilib.munkilog & Munki3.munkilib.display
 
@@ -18,7 +19,7 @@ verbose = None
 
 
 def _to_unicode(obj, encoding='UTF-8'):
-    """Coerces basestring obj to unicode"""
+    """Coerces basestring obj to unicode."""
     if isinstance(obj, basestring):
         if not isinstance(obj, unicode):
             obj = unicode(obj, encoding)
@@ -26,8 +27,12 @@ def _to_unicode(obj, encoding='UTF-8'):
 
 
 def _concat_message(msg, *args):
-    """Concatenates a string with any additional arguments,
-    making sure everything is unicode"""
+    """Concatenate a string with any additional arguments.
+
+    Returns:
+        Unicode friendly string
+
+    """
     # coerce msg to unicode if it's not already
     msg = _to_unicode(msg)
     if args:
@@ -47,9 +52,7 @@ def _concat_message(msg, *args):
 
 
 def info(msg, *args):
-    """
-    Displays info messages.
-    """
+    """Display info messages."""
     msg = _concat_message(str(msg), *args)
     if verbose > 0:
         print '    %s' % msg.encode('UTF-8')
@@ -58,7 +61,8 @@ def info(msg, *args):
 
 def detail(msg, *args):
     """
-    Displays minor info messages.
+    Display minor info messages.
+
     These are usually logged only, but can be printed to
     stdout if verbose is set greater than 1
     """
@@ -69,9 +73,7 @@ def detail(msg, *args):
 
 
 def debug(msg, *args):
-    """
-    Displays debug messages, formatting as needed.
-    """
+    """Display debug messages, formatting as needed."""
     msg = _concat_message(str(msg), *args)
     if verbose > 2:
         print '    %s' % msg.encode('UTF-8')
@@ -79,9 +81,7 @@ def debug(msg, *args):
 
 
 def warn(msg, *args):
-    """
-    Prints warning msgs to stderr and the log
-    """
+    """Print warning msgs to stderr and the log."""
     msg = _concat_message(msg, *args)
     warning = 'WARNING: %s' % msg
     if verbose > 0:
@@ -89,9 +89,7 @@ def warn(msg, *args):
 
 
 def error(msg, *args):
-    """
-    Prints msg to stderr and the log
-    """
+    """Print msg to stderr and the log."""
     msg = _concat_message(msg, *args)
     errmsg = 'ERROR: %s' % msg
     if verbose > 0:

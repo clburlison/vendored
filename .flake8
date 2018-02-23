@@ -1,0 +1,4 @@
+[flake8]
+# ignore = F401,F405,E402,F403
+# max-line-length = 100
+exclude = venv/*, code/tlsssl/_diffs/*, code/tlsssl/build/*, code/tlsssl/_patch/*, code/tlsssl/_src/*, code/tlsssl/payload/*

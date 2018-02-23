@@ -1,80 +1,29 @@
 version: 2
 jobs:
   build:
-    working_directory: /tmp/vendored
     docker:
-      - image: nathanleclaire/curl:latest
-    steps:
-      - deploy:
-          name: Run lint job
-          command: |
-            set -x
-            # Only run if on the CircleCI cloud instance
-            if [ "$CIRCLE_BUILD_NUM" ]; then
-              # Gross method to have Circle trigger the job
-              # https://circleci.com/docs/2.0/defining-multiple-jobs/#triggering-jobs
-              curl -u ${CIRCLE_API_TOKEN}: \
-                   -d build_parameters[CIRCLE_JOB]=lint \
-                   -d revision=$CIRCLE_SHA1 \
-                   https://circleci.com/api/v1.1/project/github/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME/tree/$CIRCLE_BRANCH
-            fi
-      - deploy:
-          name: Run spell check job
-          command: |
-            set -x
-            # Only run if on the CircleCI cloud instance
-            if [ "$CIRCLE_BUILD_NUM" ]; then
-              # Gross method to have Circle trigger the job
-              # https://circleci.com/docs/2.0/defining-multiple-jobs/#triggering-jobs
-              curl -u ${CIRCLE_API_TOKEN}: \
-                   -d build_parameters[CIRCLE_JOB]=spell-check \
-                   -d revision=$CIRCLE_SHA1 \
-                   https://circleci.com/api/v1.1/project/github/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME/tree/$CIRCLE_BRANCH
-            fi
-  lint:
-    working_directory: /tmp/vendored
-    docker:
-      - image: clburlison/pylint:py2-wheezy
+      - image: circleci/python:2.7-jessie
+    working_directory: ~/repo
     steps:
       - checkout
+        # Download and cache dependencies
+      - restore_cache:
+          keys:
+          - v1-dependencies-{{ checksum ".circleci/requirements.txt" }}
+          # fallback to using the latest cache if no exact match is found
+          - v1-dependencies-
       - run:
-          name: Run tests
+          name: install dependencies
           command: |
-            set -x
-            # Only run lint tests if a python file changed
-            changed_files="$(git --no-pager diff --name-only origin/master)"
-            if [[ $changed_files =~ .py ]]; then
-              echo "A python file was modified. Running python linter..."
-              flake8 --exclude=_src*,_patch*,payload,build .
-            fi
-  spell-check:
-    working_directory: /tmp/vendored
-    docker:
-      - image: clburlison/pylint:py2-wheezy
-    steps:
-      - checkout
+            virtualenv venv
+            . venv/bin/activate
+            pip install -r .circleci/requirements.txt
+      - save_cache:
+          paths:
+            - ./venv
+          key: v1-dependencies-{{ checksum ".circleci/requirements.txt" }}
       - run:
-          name: Run spell check
+          name: run linting
           command: |
-            set -x
-            #set +e  # Add this to override spelling errors failing CI tests.
-            # Then add an `exit 0` at the end of the run
-            pylint --disable=all --reports=n --enable=spelling \
-            --spelling-dict=en_US --ignore-comments=no \
-            --spelling-private-dict-file=tests/words \
-            build.py build openssl python tests tlsssl vendir
-  add-words:
-    working_directory: /tmp/vendored
-    docker:
-      - image: clburlison/pylint:py2-wheezy
-    steps:
-      - checkout
-      - run:
-          name: Add unknown words to 'tests/words'
-          command: |
-            set -x
-            pylint --disable=all --reports=n --enable=spelling \
-            --spelling-dict=en_US --ignore-comments=no \
-            --spelling-store-unknown-words=y \
-            --spelling-private-dict-file=tests/words \
-            build.py build openssl python tests tlsssl vendir
+            . venv/bin/activate
+            flake8

@@ -1,5 +1,6 @@
 """
-Setup script to compile OpenSSL 1.0.2 for macOS
+Setup script to compile OpenSSL 1.0.2 for macOS.
+
 NOTE: OpenSSL 1.1 is not supported at this time due to large API changes.
       However OpenSSL version 1.0.2 is supported by the OpenSSL Software
       Foundation until 2019-12-31 (LTS).
@@ -26,6 +27,7 @@ from vendir import hash_helper  # noqa
 from vendir import log  # noqa
 from vendir import package  # noqa
 from vendir import runner  # noqa
+from vendir import root  # noqa
 
 
 CONFIG = config.ConfigSectionMap()
@@ -37,8 +39,7 @@ OPENSSL_VERSION = CONFIG['openssl_version']
 
 
 def download_and_extract_openssl():
-    """Download openssl distribution from the internet and extract it to
-    openssl_build_dir."""
+    """Download openssl distribution and extract it to OPENSSL_BUILD_DIR."""
     if os.path.isdir(OPENSSL_BUILD_DIR):
         shutil.rmtree(OPENSSL_BUILD_DIR, ignore_errors=True)
     mkpath(OPENSSL_BUILD_DIR)
@@ -54,7 +55,7 @@ def download_and_extract_openssl():
     # We are calling os.system so we can get download progress live
     rc = runner.system(cmd)
     if rc == 0 or rc is True:
-        log.debug("OpenSSL download sucessful")
+        log.debug("OpenSSL download successfully")
     else:
         log.error("OpenSSL download failed with exit code: '{}'".format(rc))
         sys.exit(1)
@@ -68,7 +69,7 @@ def download_and_extract_openssl():
                     download_hash, config_hash))
         sys.exit(1)
     else:
-        log.detail("Hash verification of OpenSSL sucessful")
+        log.detail("Hash verification of OpenSSL successfully")
 
     # Extract openssl to the openssl_build_dir
     log.info("Extracting OpenSSL...")
@@ -76,14 +77,14 @@ def download_and_extract_openssl():
            '--strip-components', '1']
     out = runner.Popen(cmd)
     if out[2] == 0:
-        log.debug("Extraction completed sucessfully")
+        log.debug("Extraction completed successfullyly")
     else:
         log.error("Extraction has failed: {}".format(out[1]))
     os.remove(temp_filename)
 
 
 def build():
-    """This is the main processing step that builds openssl from source"""
+    """Build OpenSSL from source."""
     # Step 1: change into our build directory
     os.chdir(OPENSSL_BUILD_DIR)
     # Don't compile openssl if the skip option is passed
@@ -155,8 +156,10 @@ def build():
     sys.stdout.flush()  # does this help?
 
 
-def post_install():
+def current_certs():
     """
+    Include current SystemRoot certs with OpenSSL.
+
     This helps work around a limitation with bundling your own version of
     OpenSSL. We copy the certs from Apple's 'SystemRootCertificates.keychain'
     into OPENSSL_BUILD_DIR/cert.pem
@@ -178,7 +181,7 @@ def post_install():
 
 
 def main():
-    """Main routine"""
+    """Build and package OpenSSL."""
     parser = argparse.ArgumentParser(prog='OpenSSL setup',
                                      description='This script will compile '
                                      'OpenSSL 1.0.1+ and optionally create '
@@ -190,6 +193,8 @@ def main():
                              'for development purposes.')
     parser.add_argument('-p', '--pkg', action='store_true',
                         help='Package the OpenSSL output directory.')
+    parser.add_argument('-i', '--install', action='store_true',
+                        help='Install the OpenSSL package.')
     parser.add_argument('-v', '--verbose', action='count', default=1,
                         help="Increase verbosity level. Repeatable up to "
                         "2 times (-vv)")
@@ -202,6 +207,8 @@ def main():
     log.verbose = args.verbose
     skip = args.skip
 
+    root.root_check()
+
     if args.build:
         log.info("Bulding OpenSSL...")
         check_dir = os.path.isdir(PKG_PAYLOAD_DIR)
@@ -213,7 +220,7 @@ def main():
         else:
             download_and_extract_openssl()
             build()
-            post_install()
+            current_certs()
 
     if args.pkg:
         log.info("Building a package for OpenSSL...")
@@ -230,6 +237,13 @@ def main():
             log.info("OpenSSL packaged properly")
         else:
             log.error("Looks like package creation failed")
+
+    if args.install:
+        log.info("Installing OpenSSL pacakge...")
+        os.chdir(CURRENT_DIR)
+        cmd = ['/usr/sbin/installer', '-pkg',
+               'openssl-{}.pkg'.format(version), '-tgt', '/']
+        runner.Popen(cmd)
 
 
 if __name__ == '__main__':

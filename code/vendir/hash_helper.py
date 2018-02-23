@@ -1,6 +1,7 @@
 """
-Functions for hashing a file. This has been completely lifted from
-Munki3.munkilib.munkihash
+Functions for hashing a file.
+
+This has been completely lifted from Munki3.munkilib.munkihash
 """
 
 import hashlib
@@ -9,7 +10,7 @@ import os
 
 def gethash(filename, hash_function):
     """
-    Calculates the hashvalue of the given file with the given hash_function.
+    Calculate the hashvalue of the given file with the given hash_function.
 
     Args:
       filename: The file name to calculate the hash value of.
@@ -18,6 +19,7 @@ def gethash(filename, hash_function):
 
     Returns:
       The hashvalue of the given file as hex string.
+
     """
     if not os.path.isfile(filename):
         return 'NOT A FILE'
@@ -33,9 +35,7 @@ def gethash(filename, hash_function):
 
 
 def getsha256hash(filename):
-    """
-    Returns the SHA-256 hash value of a file as a hex string.
-    """
+    """Return the SHA-256 hash value of a file as a hex string."""
     hash_function = hashlib.sha256()
     return gethash(filename, hash_function)
 

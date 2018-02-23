@@ -1,9 +1,9 @@
 #!/usr/bin/python
-"""
-build.py - main program for vendored
-"""
+"""Build vendored packages."""
 
 import os
+
+from vendir import root
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -12,7 +12,7 @@ def build_openssl(*args):
     """Build the openssl project."""
     openssl_dir = os.path.join(CURRENT_DIR, 'openssl')
     os.chdir(openssl_dir)
-    cmd = ['/usr/bin/python', 'setup.py', '-vv', '-p', '-b', '-s']
+    cmd = ['/usr/bin/python', 'setup.py', '-vv', '-p', '-b', '-i']
     os.system(' '.join(cmd))
 
 
@@ -33,10 +33,10 @@ def build_tlsssl():
 
 
 def main():
-    """Main routine"""
+    """Build our required packages."""
+    root.root_check()
     build_openssl()
     build_python()
-    build_tlsssl()
 
 
 if __name__ == '__main__':

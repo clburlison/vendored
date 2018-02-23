@@ -1,0 +1,5 @@
+# pyobjc==2.5.1  # Stock version on macOS 10.13
+pyobjc==4.1  # Latest version as of 2017-12-06
+xattr==0.6.4
+pyOpenSSL==17.5.0
+readline==6.2.4.1

@@ -1,7 +1,4 @@
-"""
-Setup script to compile tlsssl to run againt python 2.7.
-Has a dependency on openssl package being installed on this local machine.
-"""
+"""Setup script to compile tlsssl to run against py2.7 on macOS."""
 
 # standard libs
 from distutils.dir_util import mkpath
@@ -37,8 +34,10 @@ HEADER_SRC = os.path.join(CONFIG['base_install_path'], 'openssl/include')
 
 
 def download_python_source_files():
-    """Download CPython source files from Github. Verify the sha hash and
-    redownload if they do not match."""
+    """Download CPython source files from Github.
+
+    Verify the sha hash and redownload if they do not match.
+    """
     log.info("Downloading and verifying python source files...")
     src_dir = os.path.join(CURRENT_DIR, '_src')
     if not os.path.exists(src_dir):
@@ -90,7 +89,7 @@ def download_python_source_files():
 
 
 def patch():
-    """This step creates are patch source files for usage in the build phase"""
+    """Patch source files for the build phase."""
     log.info("Creating our patch files for tlsssl...")
     patch_dir = os.path.join(CURRENT_DIR, '_patch')
     if not os.path.exists(patch_dir):
@@ -134,7 +133,7 @@ def patch():
 
 
 def build():
-    """This is the main processing step that builds tlsssl from source"""
+    """Build our tlsssl patch."""
     log.info("Building tlsssl...")
     patch_dir = os.path.join(CURRENT_DIR, '_patch')
     # Step 2: make sure the _ssl_data.h header has been generated
@@ -231,7 +230,7 @@ def build():
            "-c", "_patch/_ssl.c", "-o", "build/_ssl.o"]
     out = runner.Popen(cmd)
     if out[2] == 0:
-        log.debug("Build of '_ssl.o' completed sucessfully")
+        log.debug("Build of '_ssl.o' completed successfullyly")
     else:
         log.error("Build has failed: {}".format(out[1]))
 
@@ -241,7 +240,7 @@ def build():
            "build/_ssl.so"]
     out = runner.Popen(cmd)
     if out[2] == 0:
-        log.debug("Build of '_ssl.so' completed sucessfully")
+        log.debug("Build of '_ssl.so' completed successfullyly")
     else:
         log.error("Build has failed: {}".format(out[1]))
 
@@ -250,7 +249,7 @@ def build():
 
 
 def main():
-    """Main routine"""
+    """Build and package the tlsssl patch."""
     parser = argparse.ArgumentParser(prog='tlsssl setup',
                                      description='This script will compile '
                                      'tlsssl and optionally create '

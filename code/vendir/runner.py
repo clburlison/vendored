@@ -1,6 +1,4 @@
-"""
-Wrapper functions for os.system and subprocess.Popen
-"""
+"""Wrapper functions for os.system and subprocess.Popen."""
 
 import subprocess
 import os
@@ -10,9 +8,10 @@ from . import log
 
 def pprint(data, level='debug'):
     """
-    Pretty print our tuple return message from Popen method. The default level
-    out output is 'debug' so we only display these messages on the maximum
-    level of verbosity.
+    Pretty print our tuple return message from Popen method.
+
+    The default level out output is 'debug' so we only display these messages
+    on the maximum level of verbosity.
     """
     if level is 'info':
         log.detail(data[0])
@@ -30,7 +29,9 @@ def pprint(data, level='debug'):
 
 def system(cmd):
     """
-    Wrapper for os.system()
+    Wrap system calls.
+
+    TODO: Stop using this and use https://github.com/facebook/IT-CPE/blob/new_autopkg_tools/autopkg_tools/shell_tools.py#L89-L117  # noqa
 
     Args:
       cmd: the command to run in list format
@@ -45,7 +46,9 @@ def Popen(cmd, shell=False, bufsize=-1,
           stdin=subprocess.PIPE,
           stdout=subprocess.PIPE, stderr=subprocess.PIPE):
     """
-    Runner for subprocess.Popen()
+    Wrap subprocess calls.
+
+    TODO: Stop using this and use https://github.com/facebook/IT-CPE/blob/new_autopkg_tools/autopkg_tools/shell_tools.py#L57-L86  # noqa
 
     Args:
       these match the standard input arguments for subprocess.Popen
