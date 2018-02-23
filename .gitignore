@@ -4,3 +4,4 @@
 *.pyc
 /packages
 _notes
+config.mk
