@@ -12,12 +12,12 @@
     </volume-check>
     <pkg-ref id="com.clburlison.openssl"/>
     <pkg-ref id="com.clburlison.python"/>
-    <pkg-ref id="com.clburlison.tlsssl"/>
+    <!-- <pkg-ref id="com.clburlison.tlsssl"/> -->
     <options customize="allow" require-scripts="false"/>
     <choices-outline>
           <line choice="com.clburlison.openssl"/>
           <line choice="com.clburlison.python"/>
-          <line choice="com.clburlison.tlsssl"/>
+          <!-- <line choice="com.clburlison.tlsssl"/> -->
     </choices-outline>
     <!-- START: OpenSSL -->
     <pkg-ref id="com.clburlison.openssl" version="1.0.2n" onConclusion="none">openssl-1.0.2n.pkg</pkg-ref>
@@ -32,9 +32,9 @@
     </choice>
     <!-- END: Python2 -->
     <!-- START: tlsssl module -->
-    <pkg-ref id="com.clburlison.tlsssl" version="1.1.0" onConclusion="none">tlsssl-1.1.0.pkg</pkg-ref>
+    <!-- <pkg-ref id="com.clburlison.tlsssl" version="1.1.0" onConclusion="none">tlsssl-1.1.0.pkg</pkg-ref>
     <choice id="com.clburlison.tlsssl" visible="true" start_selected="false" title="tlsssl module">
         <pkg-ref id="com.clburlison.tlsssl"/>
-    </choice>
+    </choice> -->
     <!-- END: tlsssl module -->
 </installer-gui-script>

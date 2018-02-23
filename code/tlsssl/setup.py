@@ -313,11 +313,10 @@ def main():
             # this hacky method will force this path to have a high priority
             # http://stackoverflow.com/a/37380306
             content = ("""import sys; sys.__plen = len(sys.path)
-            {}
-            import sys; new=sys.path[sys.__plen:]; \
-            del sys.path[sys.__plen:]; \
-            p=getattr(sys,'__egginsert',0); \
-            sys.path[p:p]=new; sys.__egginsert = p+len(new)""".format(
+{}
+import sys; new=sys.path[sys.__plen:]; del sys.path[sys.__plen:]; \
+p=getattr(sys,'__egginsert',0); \
+sys.path[p:p]=new; sys.__egginsert = p+len(new)""".format(
                 os.path.dirname(LIBS_DEST)))
             f.write(content)
             f.close()
