@@ -1,0 +1,3 @@
+pyobjc==4.1  # Latest version as of 2017-12-06
+xattr==0.9.3
+pyOpenSSL==17.5.0

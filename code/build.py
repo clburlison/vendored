@@ -16,11 +16,11 @@ def build_openssl(*args):
     os.system(' '.join(cmd))
 
 
-def build_python():
+def build_python(version):
     """Build the python project."""
     openssl_dir = os.path.join(CURRENT_DIR, 'python')
     os.chdir(openssl_dir)
-    cmd = ['/usr/bin/python', 'setup.py', '-vv', '-p', '-b']
+    cmd = ['/usr/bin/python', 'setup.py', '-vv', '-p', '-b', '--py', version]
     os.system(' '.join(cmd))
 
 
@@ -36,7 +36,8 @@ def main():
     """Build our required packages."""
     root.root_check()
     build_openssl()
-    build_python()
+    build_python('2')
+    build_python('3')
 
 
 if __name__ == '__main__':
